@@ -13,6 +13,8 @@ const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
 const teamDashboard = document.getElementById('teamDashboard');
 const emptyState = document.getElementById('emptyState');
+const sidebar = document.querySelector('.sidebar');
+const mainContent = document.querySelector('.main-content');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -25,6 +27,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     setupEventListeners();
+    
+    // Set default date for task due date
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 7);
+    document.getElementById('taskDueDate').min = today.toISOString().split('T')[0];
 });
 
 // Setup Event Listeners
@@ -46,27 +54,51 @@ function setupEventListeners() {
     // Logout
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
     
-    // Team buttons (multiple instances)
+    // Team buttons
     document.getElementById('createTeamBtn').addEventListener('click', () => openModal('createTeamModal'));
     document.getElementById('joinTeamBtn').addEventListener('click', () => openModal('joinTeamModal'));
     document.getElementById('createTeamBtnMain').addEventListener('click', () => openModal('createTeamModal'));
     document.getElementById('joinTeamBtnMain').addEventListener('click', () => openModal('joinTeamModal'));
     
     // Task actions
-    document.getElementById('createTaskBtn').addEventListener('click', () => openModal('createTaskModal'));
+    document.getElementById('createTaskBtn').addEventListener('click', () => {
+        openModal('createTaskModal');
+        // Set due date to 7 days from now
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 7);
+        document.getElementById('taskDueDate').valueAsDate = dueDate;
+    });
     
-    // Task filter
+    // Task filter and sort
     document.getElementById('taskFilter').addEventListener('change', loadTeamTasks);
+    document.getElementById('taskSort').addEventListener('change', loadTeamTasks);
+    
+    // Add member
+    document.getElementById('addMemberBtn').addEventListener('click', () => openModal('addMemberModal'));
     
     // Modal forms
     document.getElementById('createTeamForm').addEventListener('submit', handleCreateTeam);
     document.getElementById('joinTeamForm').addEventListener('submit', handleJoinTeam);
+    document.getElementById('addMemberForm').addEventListener('submit', handleAddMember);
     document.getElementById('createTaskForm').addEventListener('submit', handleCreateTask);
     document.getElementById('editTaskForm').addEventListener('submit', handleUpdateTask);
     document.getElementById('deleteTaskBtn').addEventListener('click', handleDeleteTask);
     
-    // Menu toggle
-    document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
+    // Sidebar toggle
+    document.getElementById('sidebarToggle').addEventListener('click', toggleSidebar);
+    document.getElementById('mobileMenuToggle').addEventListener('click', toggleMobileMenu);
+    
+    // Team code modal buttons
+    document.getElementById('joinAfterCreateBtn').addEventListener('click', () => {
+        const teamCode = document.getElementById('newTeamCode').textContent;
+        document.getElementById('teamCodeInput').value = teamCode;
+        closeModal('teamCodeModal');
+        openModal('joinTeamModal');
+    });
+    
+    document.getElementById('closeTeamCodeBtn').addEventListener('click', () => {
+        closeModal('teamCodeModal');
+    });
     
     // Close modals
     document.querySelectorAll('.modal .close').forEach(closeBtn => {
@@ -84,16 +116,18 @@ function setupEventListeners() {
     
     // Mobile menu close on click outside
     document.addEventListener('click', (event) => {
-        const sidebar = document.querySelector('.sidebar');
-        const menuToggle = document.getElementById('menuToggle');
+        const mobileMenuToggle = document.getElementById('mobileMenuToggle');
         
-        if (window.innerWidth <= 768 && 
+        if (window.innerWidth <= 992 && 
             !sidebar.contains(event.target) && 
-            !menuToggle.contains(event.target) &&
+            !mobileMenuToggle.contains(event.target) &&
             sidebar.classList.contains('active')) {
-            toggleSidebar();
+            toggleMobileMenu();
         }
     });
+    
+    // Handle window resize
+    window.addEventListener('resize', handleResize);
 }
 
 // Auth Functions
@@ -102,6 +136,12 @@ async function handleLogin(e) {
     
     const email = document.getElementById('loginEmail').value;
     const password = document.getElementById('loginPassword').value;
+    
+    // Validate academic email
+    if (!email.endsWith('@academiccity.edu.gh')) {
+        alert('Please use your Academic City University email (@academiccity.edu.gh)');
+        return;
+    }
     
     try {
         const response = await fetch(`${API_BASE_URL}/login`, {
@@ -130,10 +170,21 @@ async function handleLogin(e) {
 async function handleRegister(e) {
     e.preventDefault();
     
-    const studentId = document.getElementById('regStudentId').value;
+    const studentId = document.getElementById('regStudentId').value.toUpperCase();
     const fullName = document.getElementById('regFullName').value;
     const email = document.getElementById('regEmail').value;
     const password = document.getElementById('regPassword').value;
+    
+    // Validation
+    if (!studentId.match(/^ACU\d{7}$/)) {
+        alert('Invalid Student ID format. Must be ACU followed by 7 digits (e.g., ACU2023001)');
+        return;
+    }
+    
+    if (!email.endsWith('@academiccity.edu.gh')) {
+        alert('Please use your Academic City University email (@academiccity.edu.gh)');
+        return;
+    }
     
     if (password.length < 6) {
         alert('Password must be at least 6 characters');
@@ -175,10 +226,17 @@ async function validateToken(token) {
             throw new Error('Token expired');
         }
         
+        // Verify token with backend
+        const response = await fetchWithAuth(`${API_BASE_URL}/verify-token`);
+        if (!response.ok) {
+            throw new Error('Invalid token');
+        }
+        
         currentUser = {
             id: payload.id,
             email: payload.email,
-            student_id: payload.student_id
+            student_id: payload.student_id,
+            full_name: payload.full_name
         };
         
         await fetchUserData();
@@ -195,7 +253,8 @@ async function fetchUserData() {
     if (!currentUser) return;
     
     // Update UI with user info
-    document.getElementById('userName').textContent = currentUser.student_id || currentUser.email.split('@')[0];
+    document.getElementById('userName').textContent = currentUser.full_name || currentUser.student_id || 'Student';
+    document.getElementById('userStudentId').textContent = currentUser.student_id || 'Student ID';
     document.getElementById('userEmail').textContent = currentUser.email;
 }
 
@@ -223,6 +282,28 @@ function switchTab(tab) {
     });
 }
 
+// Sidebar Functions
+function toggleSidebar() {
+    sidebar.classList.toggle('collapsed');
+    updateSidebarCollapsedState();
+}
+
+function toggleMobileMenu() {
+    sidebar.classList.toggle('active');
+}
+
+function handleResize() {
+    if (window.innerWidth > 992) {
+        sidebar.classList.remove('active');
+    }
+    updateSidebarCollapsedState();
+}
+
+function updateSidebarCollapsedState() {
+    const isCollapsed = sidebar.classList.contains('collapsed');
+    localStorage.setItem('sidebarCollapsed', isCollapsed);
+}
+
 // Team Functions
 async function loadUserTeams() {
     try {
@@ -231,6 +312,7 @@ async function loadUserTeams() {
         if (response.ok) {
             teams = await response.json();
             renderTeams();
+            updateStats();
             updateEmptyState();
         } else {
             throw new Error('Failed to load teams');
@@ -268,6 +350,7 @@ async function handleCreateTeam(e) {
     e.preventDefault();
     
     const teamName = document.getElementById('teamNameInput').value.trim();
+    const description = document.getElementById('teamDescription').value.trim();
     
     if (!teamName) {
         alert('Please enter a team name');
@@ -277,7 +360,10 @@ async function handleCreateTeam(e) {
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/teams`, {
             method: 'POST',
-            body: JSON.stringify({ team_name: teamName })
+            body: JSON.stringify({ 
+                team_name: teamName,
+                description: description || null
+            })
         });
         
         const data = await response.json();
@@ -285,10 +371,14 @@ async function handleCreateTeam(e) {
         if (response.ok) {
             closeModal('createTeamModal');
             e.target.reset();
-            teams.push(data);
-            renderTeams();
-            await openTeamDashboard(data);
-            alert('Team created successfully!');
+            
+            // Show team code modal
+            document.getElementById('newTeamCode').textContent = data.team_code;
+            openModal('teamCodeModal');
+            
+            // Note: Creator is NOT automatically added as a member
+            // They need to join using the team code
+            alert('Team created successfully! Share the team code with members (including yourself if you want to join).');
         } else {
             alert(data.error || 'Failed to create team');
         }
@@ -301,10 +391,15 @@ async function handleCreateTeam(e) {
 async function handleJoinTeam(e) {
     e.preventDefault();
     
-    const teamCode = document.getElementById('teamCodeInput').value.trim();
+    const teamCode = document.getElementById('teamCodeInput').value.trim().toUpperCase();
     
     if (!teamCode) {
         alert('Please enter a team code');
+        return;
+    }
+    
+    if (teamCode.length !== 6) {
+        alert('Team code must be 6 characters');
         return;
     }
     
@@ -319,13 +414,55 @@ async function handleJoinTeam(e) {
         if (response.ok) {
             closeModal('joinTeamModal');
             e.target.reset();
+            
+            // Refresh teams list
             await loadUserTeams();
-            alert('Joined team successfully!');
+            
+            // If we joined a team, show success message
+            alert('Successfully joined the team!');
+            
+            // If we have the team data, open its dashboard
+            if (data.team) {
+                await openTeamDashboard(data.team);
+            }
         } else {
             alert(data.error || data.message || 'Failed to join team');
         }
     } catch (error) {
         console.error('Join team error:', error);
+        alert('Network error. Please try again.');
+    }
+}
+
+async function handleAddMember(e) {
+    e.preventDefault();
+    
+    if (!currentTeam) return;
+    
+    const email = document.getElementById('inviteEmail').value.trim();
+    
+    if (!email.endsWith('@academiccity.edu.gh')) {
+        alert('Please enter a valid Academic City University email');
+        return;
+    }
+    
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${currentTeam.id}/invite`, {
+            method: 'POST',
+            body: JSON.stringify({ email })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            closeModal('addMemberModal');
+            e.target.reset();
+            alert('Invitation sent successfully!');
+        } else {
+            alert(data.error || 'Failed to send invitation');
+        }
+    } catch (error) {
+        console.error('Add member error:', error);
         alert('Network error. Please try again.');
     }
 }
@@ -337,6 +474,7 @@ async function openTeamDashboard(team) {
     // Update UI
     document.getElementById('teamName').textContent = team.team_name;
     document.getElementById('teamCode').textContent = team.team_code;
+    document.getElementById('teamCreated').textContent = formatDate(team.created_at);
     
     // Show team dashboard, hide empty state
     teamDashboard.style.display = 'block';
@@ -355,9 +493,9 @@ async function openTeamDashboard(team) {
     // Load team data
     await loadTeamDashboard();
     
-    // Close sidebar on mobile
-    if (window.innerWidth <= 768) {
-        toggleSidebar();
+    // Close mobile sidebar
+    if (window.innerWidth <= 992) {
+        toggleMobileMenu();
     }
 }
 
@@ -439,7 +577,7 @@ function renderTeamMembers(members) {
     membersList.innerHTML = '';
     
     if (members.length === 0) {
-        membersList.innerHTML = '<div class="no-teams">No members found</div>';
+        membersList.innerHTML = '<div class="no-teams">No members yet</div>';
         return;
     }
     
@@ -453,6 +591,7 @@ function renderTeamMembers(members) {
             <div class="member-info">
                 <h4>${member.full_name || 'Unknown'}</h4>
                 <p>${member.student_id || 'No ID'}</p>
+                ${member.is_creator ? '<span class="creator-badge">Creator</span>' : ''}
             </div>
         `;
         membersList.appendChild(memberCard);
@@ -461,11 +600,12 @@ function renderTeamMembers(members) {
 
 async function loadTeamTasks() {
     const status = document.getElementById('taskFilter').value;
+    const sortBy = document.getElementById('taskSort').value;
     
     try {
-        const url = status === 'all' 
-            ? `${API_BASE_URL}/teams/${currentTeam.id}/tasks`
-            : `${API_BASE_URL}/teams/${currentTeam.id}/tasks?status=${status}`;
+        const url = new URL(`${API_BASE_URL}/teams/${currentTeam.id}/tasks`);
+        if (status !== 'all') url.searchParams.append('status', status);
+        if (sortBy) url.searchParams.append('sort_by', sortBy);
         
         const response = await fetchWithAuth(url);
         
@@ -486,7 +626,7 @@ function renderTasks() {
     tasksList.innerHTML = '';
     
     if (tasks.length === 0) {
-        tasksList.innerHTML = '<div class="no-tasks">No tasks found</div>';
+        tasksList.innerHTML = '<div class="no-tasks">No tasks found. Create your first task!</div>';
         return;
     }
     
@@ -606,6 +746,7 @@ async function handleCreateTask(e) {
             e.target.reset();
             await loadTeamTasks();
             await loadTeamStats();
+            updateStats();
             alert('Task created successfully!');
         } else {
             alert(data.error || 'Failed to create task');
@@ -673,6 +814,7 @@ async function handleUpdateTask(e) {
             closeModal('editTaskModal');
             await loadTeamTasks();
             await loadTeamStats();
+            updateStats();
             alert('Task updated successfully!');
         } else {
             alert(data.error || 'Failed to update task');
@@ -701,6 +843,7 @@ async function handleDeleteTask() {
             closeModal('editTaskModal');
             await loadTeamTasks();
             await loadTeamStats();
+            updateStats();
             alert('Task deleted successfully!');
         } else {
             alert(data.error || 'Failed to delete task');
@@ -715,6 +858,12 @@ async function handleDeleteTask() {
 function showDashboard() {
     authSection.style.display = 'none';
     dashboard.style.display = 'flex';
+    
+    // Restore sidebar state
+    const sidebarCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+    if (sidebarCollapsed) {
+        sidebar.classList.add('collapsed');
+    }
 }
 
 function showAuth() {
@@ -730,7 +879,16 @@ function updateEmptyState() {
     if (teams.length === 0) {
         teamDashboard.style.display = 'none';
         emptyState.style.display = 'flex';
+    } else {
+        teamDashboard.style.display = 'block';
+        emptyState.style.display = 'none';
     }
+}
+
+function updateStats() {
+    // Update sidebar stats
+    document.getElementById('teamsCount').textContent = teams.length;
+    document.getElementById('tasksCount').textContent = tasks.length;
 }
 
 function updateMemberCount(count) {
@@ -747,14 +905,10 @@ function openModal(modalId) {
     // If opening task modal, load team members for assignee select
     if (modalId === 'createTaskModal') {
         loadTeamMembersForSelect();
-        // Set today's date as default
-        document.getElementById('taskDueDate').valueAsDate = new Date();
-    } else if (modalId === 'editTaskModal') {
-        // Set today's date as default for edit if not set
-        const dueDateInput = document.getElementById('editTaskDueDate');
-        if (!dueDateInput.value) {
-            dueDateInput.valueAsDate = new Date();
-        }
+        // Set default due date (7 days from now)
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + 7);
+        document.getElementById('taskDueDate').valueAsDate = dueDate;
     }
 }
 
@@ -765,15 +919,6 @@ function closeModal(modalId) {
     const form = document.querySelector(`#${modalId} form`);
     if (form) {
         form.reset();
-    }
-}
-
-function toggleSidebar() {
-    const sidebar = document.querySelector('.sidebar');
-    if (window.innerWidth <= 768) {
-        sidebar.classList.toggle('active');
-    } else {
-        sidebar.classList.toggle('collapsed');
     }
 }
 
