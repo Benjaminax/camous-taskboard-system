@@ -1,6 +1,38 @@
 // frontend/script.js
 const API_BASE_URL = 'https://camous-taskboard-system.onrender.com/api';
 
+// Helper function for API calls with retry logic
+async function apiCall(endpoint, options = {}) {
+    const maxRetries = 3;
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            });
+            
+            if (!response.ok && response.status === 0) {
+                throw new Error('Network error - possible HTTP/2 issue');
+            }
+            
+            return response;
+        } catch (error) {
+            lastError = error;
+            if (attempt < maxRetries) {
+                console.warn(`API call attempt ${attempt} failed, retrying...`);
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            }
+        }
+    }
+    
+    throw lastError;
+}
+
 // DOM Elements
 const authSection = document.getElementById('authSection');
 const dashboard = document.getElementById('dashboard');
@@ -85,9 +117,8 @@ async function handleLogin(e) {
     const password = document.getElementById('loginPassword').value;
     
     try {
-        const response = await fetch(`${API_BASE_URL}/login`, {
+        const response = await apiCall('/login', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
         
@@ -103,7 +134,7 @@ async function handleLogin(e) {
         }
     } catch (error) {
         console.error('Login error:', error);
-        alert('Network error. Please try again.');
+        alert('Network error. Please check your connection and try again.');
     }
 }
 
@@ -121,9 +152,8 @@ async function handleRegister(e) {
     }
     
     try {
-        const response = await fetch(`${API_BASE_URL}/register`, {
+        const response = await apiCall('/register', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ student_id: studentId, full_name: fullName, email, password })
         });
         
@@ -132,14 +162,13 @@ async function handleRegister(e) {
         if (response.ok) {
             alert('Registration successful! Please login.');
             switchTab('login');
-            // Clear form
             e.target.reset();
         } else {
             alert(data.error || 'Registration failed');
         }
     } catch (error) {
         console.error('Register error:', error);
-        alert('Network error. Please try again.');
+        alert('Network error. Please check your connection and try again.');
     }
 }
 
