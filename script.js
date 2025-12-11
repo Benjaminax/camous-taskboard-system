@@ -5,6 +5,7 @@ let currentUser = null;
 let currentTeam = null;
 let teams = [];
 let tasks = [];
+let allTeams = [];
 
 // DOM Elements
 const authSection = document.getElementById('authSection');
@@ -13,6 +14,7 @@ const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
 const teamDashboard = document.getElementById('teamDashboard');
 const emptyState = document.getElementById('emptyState');
+const browseTeamsSection = document.getElementById('browseTeamsSection');
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -67,22 +69,37 @@ function setupEventListeners() {
     
     // Team buttons
     document.getElementById('createTeamBtn').addEventListener('click', () => openModal('createTeamModal'));
+    document.getElementById('browseTeamsBtn').addEventListener('click', () => showBrowseTeams());
     document.getElementById('joinTeamBtn').addEventListener('click', () => openModal('joinTeamModal'));
     document.getElementById('createTeamBtnMain').addEventListener('click', () => openModal('createTeamModal'));
+    document.getElementById('browseTeamsBtnMain').addEventListener('click', () => showBrowseTeams());
     document.getElementById('joinTeamBtnMain').addEventListener('click', () => openModal('joinTeamModal'));
     
     // Task actions
     document.getElementById('createTaskBtn').addEventListener('click', () => openModal('createTaskModal'));
+    document.getElementById('inviteMemberBtn').addEventListener('click', () => openModal('inviteMemberModal'));
+    document.getElementById('manageMembersBtn').addEventListener('click', () => alert('Member management feature coming soon!'));
+    document.getElementById('exportTasksBtn').addEventListener('click', () => alert('Export feature coming soon!'));
     
     // Task filter
     document.getElementById('taskFilter').addEventListener('change', loadTeamTasks);
     
+    // Team search
+    document.getElementById('teamSearch')?.addEventListener('input', filterTeams);
+    document.getElementById('modalTeamSearch')?.addEventListener('input', filterAvailableTeams);
+    document.getElementById('modalSearchBtn')?.addEventListener('click', loadAvailableTeams);
+    
     // Modal forms
     document.getElementById('createTeamForm').addEventListener('submit', handleCreateTeam);
     document.getElementById('joinTeamForm').addEventListener('submit', handleJoinTeam);
+    document.getElementById('requestJoinForm').addEventListener('submit', handleRequestJoin);
     document.getElementById('createTaskForm').addEventListener('submit', handleCreateTask);
     document.getElementById('editTaskForm').addEventListener('submit', handleUpdateTask);
     document.getElementById('deleteTaskBtn').addEventListener('click', handleDeleteTask);
+    document.getElementById('inviteMemberForm').addEventListener('submit', handleInviteMember);
+    
+    // Team code modal
+    document.getElementById('closeTeamCodeBtn').addEventListener('click', () => closeModal('teamCodeModal'));
     
     // Password visibility toggle
     document.querySelectorAll('.toggle-password').forEach(button => {
@@ -258,6 +275,7 @@ function handleLogout() {
         currentTeam = null;
         teams = [];
         tasks = [];
+        allTeams = [];
         showAuth();
     }
 }
@@ -291,15 +309,6 @@ async function loadUserTeams() {
             teams = await response.json();
             renderTeams();
             updateEmptyState();
-        } else if (response.status === 404) {
-            // If endpoint doesn't exist, try without /api
-            console.log('Trying alternative endpoint...');
-            const altResponse = await fetchWithAuth(`${API_BASE_URL}/user/teams`);
-            if (altResponse.ok) {
-                teams = await altResponse.json();
-                renderTeams();
-                updateEmptyState();
-            }
         }
     } catch (error) {
         console.error('Load teams error:', error);
@@ -334,6 +343,8 @@ async function handleCreateTeam(e) {
     e.preventDefault();
     
     const teamName = document.getElementById('teamNameInput').value.trim();
+    const description = document.getElementById('teamDescription').value.trim();
+    const maxMembers = document.getElementById('teamMaxMembers').value;
     
     if (!teamName) {
         alert('Please enter a team name');
@@ -343,7 +354,11 @@ async function handleCreateTeam(e) {
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/teams`, {
             method: 'POST',
-            body: JSON.stringify({ team_name: teamName })
+            body: JSON.stringify({ 
+                team_name: teamName,
+                description: description || null,
+                max_members: maxMembers
+            })
         });
         
         const data = await response.json();
@@ -351,10 +366,17 @@ async function handleCreateTeam(e) {
         if (response.ok) {
             closeModal('createTeamModal');
             e.target.reset();
+            
+            // Show team code modal
+            document.getElementById('newTeamCode').textContent = data.team_code;
+            openModal('teamCodeModal');
+            
+            // Add team to local state and reload
             teams.push(data);
             renderTeams();
             await openTeamDashboard(data);
-            alert('Team created successfully!');
+            
+            alert('Team created successfully and saved to database!');
         } else {
             alert(data.error || 'Failed to create team');
         }
@@ -385,8 +407,17 @@ async function handleJoinTeam(e) {
         if (response.ok) {
             closeModal('joinTeamModal');
             e.target.reset();
+            
+            // Refresh teams list
             await loadUserTeams();
-            alert('Joined team successfully!');
+            
+            // If we joined a team, show success message
+            alert('Successfully joined the team!');
+            
+            // If we have the team data, open its dashboard
+            if (data.team) {
+                await openTeamDashboard(data.team);
+            }
         } else {
             alert(data.error || 'Failed to join team');
         }
@@ -396,17 +427,286 @@ async function handleJoinTeam(e) {
     }
 }
 
+async function handleInviteMember(e) {
+    e.preventDefault();
+    
+    if (!currentTeam) return;
+    
+    const email = document.getElementById('inviteEmail').value.trim();
+    const message = document.getElementById('inviteMessage').value.trim();
+    
+    if (!email) {
+        alert('Please enter an email address');
+        return;
+    }
+    
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${currentTeam.id}/invite`, {
+            method: 'POST',
+            body: JSON.stringify({ 
+                email: email,
+                message: message || null
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            closeModal('inviteMemberModal');
+            e.target.reset();
+            alert('Invitation sent successfully!');
+        } else {
+            alert(data.error || 'Failed to send invitation');
+        }
+    } catch (error) {
+        console.error('Invite member error:', error);
+        alert('Network error. Please try again.');
+    }
+}
+
+// Browse Teams Functions
+async function showBrowseTeams() {
+    teamDashboard.style.display = 'none';
+    emptyState.style.display = 'none';
+    browseTeamsSection.style.display = 'block';
+    
+    await loadAllTeams();
+}
+
+async function loadAllTeams() {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/teams/all`);
+        
+        if (response.ok) {
+            allTeams = await response.json();
+            renderAllTeams();
+        } else {
+            console.error('Failed to load all teams');
+            allTeams = [];
+            renderAllTeams();
+        }
+    } catch (error) {
+        console.error('Load all teams error:', error);
+        allTeams = [];
+        renderAllTeams();
+    }
+}
+
+function renderAllTeams() {
+    const allTeamsList = document.getElementById('allTeamsList');
+    allTeamsList.innerHTML = '';
+    
+    if (allTeams.length === 0) {
+        allTeamsList.innerHTML = '<div class="no-teams">No teams available to join.</div>';
+        return;
+    }
+    
+    allTeams.forEach(team => {
+        // Check if user is already in this team
+        const isMember = teams.some(t => t.id === team.id);
+        
+        const teamCard = document.createElement('div');
+        teamCard.className = 'team-browse-card';
+        teamCard.innerHTML = `
+            <h4>${team.team_name}</h4>
+            <p class="team-description">${team.description || 'No description provided.'}</p>
+            <div class="team-meta">
+                <div class="team-creator-info">
+                    <i class="fas fa-user"></i> ${team.creator_name || 'Unknown'}
+                </div>
+                <div class="team-size">
+                    <i class="fas fa-users"></i> ${team.member_count || 0}/${team.max_members || '∞'} members
+                </div>
+            </div>
+            ${isMember ? 
+                '<button class="request-join-btn" disabled>Already a Member</button>' :
+                `<button class="request-join-btn" data-team-id="${team.id}">
+                    <i class="fas fa-user-plus"></i> Request to Join
+                </button>`
+            }
+        `;
+        
+        if (!isMember) {
+            const joinBtn = teamCard.querySelector('.request-join-btn');
+            joinBtn.addEventListener('click', () => openRequestJoinModal(team));
+        }
+        
+        allTeamsList.appendChild(teamCard);
+    });
+}
+
+function filterTeams() {
+    const searchTerm = document.getElementById('teamSearch').value.toLowerCase();
+    const filteredTeams = allTeams.filter(team => 
+        team.team_name.toLowerCase().includes(searchTerm) ||
+        (team.description && team.description.toLowerCase().includes(searchTerm)) ||
+        (team.creator_name && team.creator_name.toLowerCase().includes(searchTerm))
+    );
+    
+    renderFilteredTeams(filteredTeams);
+}
+
+function renderFilteredTeams(filteredTeams) {
+    const allTeamsList = document.getElementById('allTeamsList');
+    allTeamsList.innerHTML = '';
+    
+    if (filteredTeams.length === 0) {
+        allTeamsList.innerHTML = '<div class="no-teams">No teams match your search.</div>';
+        return;
+    }
+    
+    filteredTeams.forEach(team => {
+        const isMember = teams.some(t => t.id === team.id);
+        
+        const teamCard = document.createElement('div');
+        teamCard.className = 'team-browse-card';
+        teamCard.innerHTML = `
+            <h4>${team.team_name}</h4>
+            <p class="team-description">${team.description || 'No description provided.'}</p>
+            <div class="team-meta">
+                <div class="team-creator-info">
+                    <i class="fas fa-user"></i> ${team.creator_name || 'Unknown'}
+                </div>
+                <div class="team-size">
+                    <i class="fas fa-users"></i> ${team.member_count || 0}/${team.max_members || '∞'} members
+                </div>
+            </div>
+            ${isMember ? 
+                '<button class="request-join-btn" disabled>Already a Member</button>' :
+                `<button class="request-join-btn" data-team-id="${team.id}">
+                    <i class="fas fa-user-plus"></i> Request to Join
+                </button>`
+            }
+        `;
+        
+        if (!isMember) {
+            const joinBtn = teamCard.querySelector('.request-join-btn');
+            joinBtn.addEventListener('click', () => openRequestJoinModal(team));
+        }
+        
+        allTeamsList.appendChild(teamCard);
+    });
+}
+
+async function loadAvailableTeams() {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/teams/all`);
+        
+        if (response.ok) {
+            const availableTeams = await response.json();
+            renderAvailableTeams(availableTeams);
+        }
+    } catch (error) {
+        console.error('Load available teams error:', error);
+    }
+}
+
+function renderAvailableTeams(teamsList) {
+    const availableTeamsList = document.getElementById('availableTeamsList');
+    availableTeamsList.innerHTML = '';
+    
+    if (teamsList.length === 0) {
+        availableTeamsList.innerHTML = '<div class="no-teams">No teams available.</div>';
+        return;
+    }
+    
+    teamsList.forEach(team => {
+        const isMember = teams.some(t => t.id === team.id);
+        
+        const teamItem = document.createElement('div');
+        teamItem.className = 'available-team-item';
+        teamItem.innerHTML = `
+            <h5>${team.team_name}</h5>
+            <p>${team.description || 'No description'}</p>
+            <div class="team-meta">
+                <span><i class="fas fa-user"></i> ${team.creator_name || 'Unknown'}</span>
+                <span><i class="fas fa-users"></i> ${team.member_count || 0}/${team.max_members || '∞'}</span>
+            </div>
+        `;
+        
+        if (!isMember) {
+            teamItem.addEventListener('click', () => openRequestJoinModal(team));
+        }
+        
+        availableTeamsList.appendChild(teamItem);
+    });
+}
+
+function filterAvailableTeams() {
+    const searchTerm = document.getElementById('modalTeamSearch').value.toLowerCase();
+    const filtered = allTeams.filter(team => 
+        team.team_name.toLowerCase().includes(searchTerm) ||
+        (team.description && team.description.toLowerCase().includes(searchTerm))
+    );
+    renderAvailableTeams(filtered);
+}
+
+// Request to Join Functions
+function openRequestJoinModal(team) {
+    document.getElementById('requestTeamName').textContent = team.team_name;
+    document.getElementById('requestTeamDescription').textContent = team.description || 'No description provided.';
+    document.getElementById('requestTeamCreator').textContent = team.creator_name || 'Unknown';
+    document.getElementById('requestTeamMembers').textContent = team.member_count || 0;
+    document.getElementById('requestTeamMaxMembers').textContent = team.max_members || '∞';
+    
+    // Store team ID in form
+    const form = document.getElementById('requestJoinForm');
+    form.dataset.teamId = team.id;
+    
+    openModal('requestJoinModal');
+}
+
+async function handleRequestJoin(e) {
+    e.preventDefault();
+    
+    const teamId = e.target.dataset.teamId;
+    const requestedRole = document.getElementById('requestedRole').value;
+    const message = document.getElementById('joinMessage').value.trim();
+    
+    if (!requestedRole) {
+        alert('Please select a role you want to play in the team.');
+        return;
+    }
+    
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${teamId}/request-join`, {
+            method: 'POST',
+            body: JSON.stringify({
+                requested_role: requestedRole,
+                message: message || null
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            closeModal('requestJoinModal');
+            e.target.reset();
+            alert('Join request sent successfully! The team creator will review your request.');
+        } else {
+            alert(data.error || 'Failed to send join request');
+        }
+    } catch (error) {
+        console.error('Request join error:', error);
+        alert('Network error. Please try again.');
+    }
+}
+
 // Team Dashboard Functions
 async function openTeamDashboard(team) {
     currentTeam = team;
     
+    // Hide other sections
+    browseTeamsSection.style.display = 'none';
+    emptyState.style.display = 'none';
+    
     // Update UI
     document.getElementById('teamName').textContent = team.team_name;
     document.getElementById('teamCode').textContent = team.team_code;
+    document.getElementById('teamCreator').textContent = team.creator_name || 'Unknown';
     
-    // Show team dashboard, hide empty state
+    // Show team dashboard
     teamDashboard.style.display = 'block';
-    emptyState.style.display = 'none';
     
     // Update active team in sidebar
     document.querySelectorAll('.team-nav-item').forEach(item => {
@@ -502,6 +802,8 @@ function renderTeamMembers(members) {
             <div class="member-info">
                 <h4>${member.full_name || 'Unknown'}</h4>
                 <p>${member.student_id || 'No ID'}</p>
+                ${member.role ? `<span class="member-role">${member.role}</span>` : ''}
+                ${member.is_creator ? '<span class="member-role">Creator</span>' : ''}
             </div>
         `;
         membersList.appendChild(memberCard);
@@ -655,7 +957,7 @@ async function handleCreateTask(e) {
             e.target.reset();
             await loadTeamTasks();
             await loadTeamStats();
-            alert('Task created successfully!');
+            alert('Task created successfully and saved to database!');
         } else {
             alert(data.error || 'Failed to create task');
         }
@@ -722,7 +1024,7 @@ async function handleUpdateTask(e) {
             closeModal('editTaskModal');
             await loadTeamTasks();
             await loadTeamStats();
-            alert('Task updated successfully!');
+            alert('Task updated successfully and saved to database!');
         } else {
             alert(data.error || 'Failed to update task');
         }
@@ -733,7 +1035,7 @@ async function handleUpdateTask(e) {
 }
 
 async function handleDeleteTask() {
-    if (!confirm('Are you sure you want to delete this task?')) {
+    if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
         return;
     }
     
@@ -784,9 +1086,9 @@ function showAuth() {
 function updateEmptyState() {
     if (teams.length === 0) {
         teamDashboard.style.display = 'none';
+        browseTeamsSection.style.display = 'none';
         emptyState.style.display = 'flex';
     } else {
-        teamDashboard.style.display = 'block';
         emptyState.style.display = 'none';
     }
 }
@@ -809,6 +1111,11 @@ function openModal(modalId) {
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + 7);
         document.getElementById('taskDueDate').valueAsDate = dueDate;
+    }
+    
+    // If opening browse teams modal
+    if (modalId === 'browseTeamsModal') {
+        loadAvailableTeams();
     }
 }
 
