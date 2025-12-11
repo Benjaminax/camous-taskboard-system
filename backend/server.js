@@ -203,6 +203,33 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
 });
 
 
+app.put('/api/teams/:id', authenticateToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { team_name, description, max_members } = req.body;
+        
+        // Check if user is the creator
+        const teamCheck = await pool.query('SELECT created_by FROM teams WHERE id = $1', [id]);
+        if (teamCheck.rows.length === 0) {
+            return res.status(404).json({ error: 'Team not found' });
+        }
+        if (teamCheck.rows[0].created_by !== req.user.id) {
+            return res.status(403).json({ error: 'Only the team creator can edit the team' });
+        }
+        
+        const result = await pool.query(
+            'UPDATE teams SET team_name = $1, description = $2, max_members = $3 WHERE id = $4 RETURNING *',
+            [team_name, description, max_members, id]
+        );
+        
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('API: Error updating team:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
 app.get('/api/teams/all', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(

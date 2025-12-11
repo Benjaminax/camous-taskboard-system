@@ -180,6 +180,9 @@
                         <button id="inviteMemberBtn" class="btn-secondary">
                             <i class="fas fa-user-plus"></i> Invite
                         </button>
+                        <button id="editTeamBtn" class="btn-secondary">
+                            <i class="fas fa-edit"></i> Edit Team
+                        </button>
                         <select id="taskFilter" class="filter-select">
                             <option value="all">All Tasks</option>
                             <option value="Pending">Pending</option>
@@ -311,6 +314,37 @@
                 </div>
                 <button type="submit" class="btn-primary btn-block">
                     <i class="fas fa-check"></i> Create Team
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div id="editTeamModal" class="modal">
+        <div class="modal-content">
+            <button class="close">&times;</button>
+            <h3><i class="fas fa-edit"></i> Edit Team</h3>
+            <p class="modal-description">Update your team details.</p>
+            <form id="editTeamForm">
+                <div class="form-group">
+                    <label for="editTeamNameInput">Team Name *</label>
+                    <input type="text" id="editTeamNameInput" placeholder="Enter team name" required>
+                </div>
+                <div class="form-group">
+                    <label for="editTeamDescription">Description</label>
+                    <textarea id="editTeamDescription" placeholder="Describe your team/project" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="editTeamMaxMembers">Maximum Members</label>
+                    <select id="editTeamMaxMembers">
+                        <option value="5">5 members</option>
+                        <option value="10" selected>10 members</option>
+                        <option value="15">15 members</option>
+                        <option value="20">20 members</option>
+                        <option value="0">No limit</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary btn-block">
+                    <i class="fas fa-check"></i> Update Team
                 </button>
             </form>
         </div>

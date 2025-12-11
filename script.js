@@ -84,6 +84,7 @@ function setupEventListeners() {
     document.getElementById('leaveTeamBtn').addEventListener('click', handleLeaveTeam);
     document.getElementById('deleteTeamBtn').addEventListener('click', handleDeleteTeam);
     document.getElementById('inviteMemberBtn').addEventListener('click', () => openModal('inviteMemberModal'));
+    document.getElementById('editTeamBtn').addEventListener('click', () => openEditTeamModal());
     document.getElementById('manageMembersBtn').addEventListener('click', () => alert('Member management feature coming soon!'));
     document.getElementById('exportTasksBtn').addEventListener('click', () => alert('Export feature coming soon!'));
     
@@ -94,6 +95,7 @@ function setupEventListeners() {
     document.getElementById('modalSearchBtn')?.addEventListener('click', loadAvailableTeams);
     
     document.getElementById('createTeamForm').addEventListener('submit', handleCreateTeam);
+    document.getElementById('editTeamForm').addEventListener('submit', handleEditTeam);
     document.getElementById('joinTeamForm').addEventListener('submit', handleJoinTeam);
     document.getElementById('requestJoinForm').addEventListener('submit', handleRequestJoin);
     document.getElementById('createTaskForm').addEventListener('submit', handleCreateTask);
@@ -381,6 +383,67 @@ async function handleCreateTeam(e) {
     } catch (error) {
         console.error('Create team error:', error);
         alert('Network error. Please try again.');
+    }
+}
+
+function openEditTeamModal() {
+    document.getElementById('editTeamNameInput').value = currentTeam.team_name;
+    document.getElementById('editTeamDescription').value = currentTeam.description || '';
+    document.getElementById('editTeamMaxMembers').value = currentTeam.max_members || 10;
+    openModal('editTeamModal');
+}
+
+async function handleEditTeam(e) {
+    e.preventDefault();
+    
+    const teamName = document.getElementById('editTeamNameInput').value.trim();
+    const description = document.getElementById('editTeamDescription').value.trim();
+    const maxMembersValue = document.getElementById('editTeamMaxMembers').value;
+    const maxMembers = maxMembersValue !== '' ? parseInt(maxMembersValue, 10) : null;
+    
+    if (!teamName) {
+        alert('Please enter a team name');
+        return;
+    }
+    
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/${currentTeam.id}`, {
+            method: 'PUT',
+            body: JSON.stringify({ 
+                team_name: teamName,
+                description: description || null,
+                max_members: maxMembers
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            closeModal('editTeamModal');
+            e.target.reset();
+            
+            // Update currentTeam
+            currentTeam.team_name = data.team_name;
+            currentTeam.description = data.description;
+            currentTeam.max_members = data.max_members;
+            
+            // Update UI
+            document.getElementById('teamName').textContent = data.team_name;
+            
+            // Update teams array
+            const index = teams.findIndex(t => t.id === data.id);
+            if (index !== -1) {
+                teams[index] = data;
+                renderTeams();
+            }
+            
+            alert('Team updated successfully!');
+        } else {
+            alert(data.error || 'Failed to update team');
+        }
+    } catch (error) {
+        console.error('Error updating team:', error);
+        alert('Failed to update team');
     }
 }
 
@@ -710,13 +773,16 @@ async function openTeamDashboard(team) {
     document.getElementById('adminPanel').style.display = 'none';
     const deleteBtn = document.getElementById('deleteTeamBtn');
     const leaveBtn = document.getElementById('leaveTeamBtn');
-    if (currentUser && currentTeam && deleteBtn && leaveBtn) {
+    const editBtn = document.getElementById('editTeamBtn');
+    if (currentUser && currentTeam && deleteBtn && leaveBtn && editBtn) {
         if (currentTeam.created_by === currentUser.id || currentUser.is_admin) {
             deleteBtn.style.display = 'inline-flex';
             leaveBtn.style.display = 'none';
+            editBtn.style.display = 'inline-flex';
         } else {
             deleteBtn.style.display = 'none';
             leaveBtn.style.display = 'inline-flex';
+            editBtn.style.display = 'none';
         }
     }
 }
