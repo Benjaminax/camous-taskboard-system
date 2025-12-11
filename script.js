@@ -5,6 +5,18 @@ let teams = [];
 let tasks = [];
 let allTeams = [];
 const API_BASE_URL = 'https://camous-taskboard-system.onrender.com';
+
+// Debug function to check login status
+window.checkLoginStatus = function() {
+    console.log('=== LOGIN STATUS CHECK ===');
+    console.log('Current user:', currentUser);
+    console.log('Token in localStorage:', !!localStorage.getItem('token'));
+    console.log('Auth section display:', authSection.style.display);
+    console.log('Dashboard display:', dashboard.style.display);
+    console.log('Token value:', localStorage.getItem('token') ? 'Present' : 'Not present');
+    return { user: currentUser, hasToken: !!localStorage.getItem('token') };
+};
+
 const authSection = document.getElementById('authSection');
 const dashboard = document.getElementById('dashboard');
 const loginForm = document.getElementById('loginForm');
@@ -171,6 +183,7 @@ async function handleLogin(e) {
         console.log('Login response data:', data);
         
         if (response.ok) {
+            console.log('Login successful! Storing token and user data...');
             currentUser = null;
             currentTeam = null;
             teams = [];
@@ -179,9 +192,15 @@ async function handleLogin(e) {
             
             localStorage.setItem('token', data.token);
             currentUser = { ...data.user, is_admin: data.user.is_admin || false };
+            
+            console.log('Current user set:', currentUser);
+            console.log('Token stored in localStorage');
+            
             showDashboard();
             loadUserTeams();
             showAdminIfNeeded();
+            
+            console.log('Dashboard should now be visible');
         } else {
             if (data.error && data.error.includes('Invalid credentials')) {
                 alert('Invalid email or password. Please try again.');
@@ -1187,7 +1206,9 @@ async function handleDeleteTask() {
 }
 
 function showDashboard() {
+    console.log('showDashboard called with currentUser:', currentUser);
     if (currentUser) {
+        console.log('Setting user info in dashboard');
         document.getElementById('userName').textContent = currentUser.full_name || 'User';
         document.getElementById('userEmail').textContent = currentUser.email || '';
         const badge = document.getElementById('userRoleBadge');
@@ -1209,6 +1230,8 @@ function showDashboard() {
     if (homeBtn) homeBtn.classList.add('active');
     document.getElementById('homeDashboard').style.display = 'block';
     loadHomeDashboard();
+    
+    console.log('Dashboard display completed');
 }
 
 function showAuth() {
