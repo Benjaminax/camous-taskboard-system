@@ -25,6 +25,13 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
             if (payload.exp * 1000 > Date.now()) {
+                // Clear all previous state for clean auto-login
+                currentUser = null;
+                currentTeam = null;
+                teams = [];
+                tasks = [];
+                allTeams = [];
+                
                 currentUser = {
                     id: payload.id,
                     email: payload.email,
@@ -184,6 +191,13 @@ async function handleLogin(e) {
         const data = await response.json();
         
         if (response.ok) {
+            // Clear all previous state for clean login
+            currentUser = null;
+            currentTeam = null;
+            teams = [];
+            tasks = [];
+            allTeams = [];
+            
             localStorage.setItem('token', data.token);
             currentUser = { ...data.user, is_admin: data.user.is_admin || false };
             showDashboard();
@@ -1109,6 +1123,13 @@ function showDashboard() {
             if (currentUser.is_admin) { badge.style.display = 'inline-block'; badge.textContent = 'Admin'; } else { badge.style.display = 'none'; }
         }
     }
+    
+    // Hide all panels first for clean state
+    document.getElementById('teamDashboard').style.display = 'none';
+    document.getElementById('homeDashboard').style.display = 'none';
+    document.getElementById('browseTeamsSection').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'none';
     
     authSection.style.display = 'none';
     dashboard.style.display = 'flex';
