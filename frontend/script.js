@@ -74,15 +74,26 @@ function trackAnalytics(eventName, properties = {}) {
 document.addEventListener('DOMContentLoaded', () => {
     initializeAnalytics();
     
+    setupEventListeners();
+    setupSidebarListeners();
+    
     // Check for stored token
     const token = localStorage.getItem('token');
     if (token) {
-        // Validate token
-        fetchUserData(token);
+        try {
+            // Validate token by decoding it
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            // If we get here, token is valid (at least syntactically)
+            fetchUserData(token);
+        } catch (error) {
+            // Token is invalid, clear it and show auth
+            localStorage.removeItem('token');
+            showAuth();
+        }
+    } else {
+        // No token, show auth screen
+        showAuth();
     }
-    
-    setupEventListeners();
-    setupSidebarListeners();
 });
 
 // Setup Sidebar Listeners
@@ -739,9 +750,11 @@ async function fetchUserData(token) {
         // Decode token to get user info
         if (!token) {
             localStorage.removeItem('token');
+            currentUser = null;
             showAuth();
             return;
         }
+        
         const payload = JSON.parse(atob(token.split('.')[1]));
         currentUser = {
             id: payload.id,
@@ -766,6 +779,8 @@ async function fetchUserData(token) {
     } catch (error) {
         console.error('Token decode error:', error);
         localStorage.removeItem('token');
+        currentUser = null;
+        showAuth();
     }
 }
 
