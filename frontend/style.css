@@ -1,3 +1,27 @@
+/* Password toggle styles */
+.password-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.password-wrapper input[type="password"],
+.password-wrapper input[type="text"] {
+    width: 100%;
+    padding-right: 2.5rem;
+}
+.toggle-password {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: var(--primary-light-gray);
+    font-size: 1.1rem;
+    z-index: 2;
+}
+.toggle-password:hover {
+    color: var(--primary-red);
+}
 :root {
     --primary-red: #CC3634;
     --primary-dark-red: #a62b2a;

@@ -44,7 +44,26 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     setupEventListeners();
+    setupPasswordToggles();
 });
+// Show/hide password toggles
+function setupPasswordToggles() {
+    document.querySelectorAll('.toggle-password').forEach(toggle => {
+        toggle.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            if (input) {
+                if (input.type === 'password') {
+                    input.type = 'text';
+                    this.innerHTML = '<i class="fas fa-eye-slash"></i>';
+                } else {
+                    input.type = 'password';
+                    this.innerHTML = '<i class="fas fa-eye"></i>';
+                }
+            }
+        });
+    });
+}
 
 // Setup Event Listeners
 function setupEventListeners() {
@@ -136,12 +155,17 @@ async function handleRegister(e) {
     const fullName = document.getElementById('regFullName').value;
     const email = document.getElementById('regEmail').value;
     const password = document.getElementById('regPassword').value;
-    
+    const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+
     if (password.length < 6) {
         alert('Password must be at least 6 characters');
         return;
     }
-    
+    if (password !== passwordConfirm) {
+        alert('Passwords do not match');
+        return;
+    }
+
     try {
         const response = await fetch(`${API_BASE_URL}/register`, {
             method: 'POST',
@@ -153,9 +177,9 @@ async function handleRegister(e) {
                 password 
             })
         });
-        
+
         const data = await response.json();
-        
+
         if (response.ok) {
             localStorage.setItem('token', data.token);
             currentUser = data.user;
