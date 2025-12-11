@@ -4,6 +4,7 @@ let currentTeam = null;
 let teams = [];
 let tasks = [];
 let allTeams = [];
+const API_BASE_URL = 'http://localhost:5000';
 const authSection = document.getElementById('authSection');
 const dashboard = document.getElementById('dashboard');
 const loginForm = document.getElementById('loginForm');
