@@ -6,25 +6,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Academic City - Task Collaboration Board</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-    <!-- Navigation -->
+    <!-- Navigation Bar -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="logo">
                 <i class="fas fa-tasks"></i>
                 <h1>Academic City TaskBoard</h1>
             </div>
-            <div class="nav-links">
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
                 <a href="#" id="loginBtn">Login</a>
                 <a href="#" id="registerBtn">Register</a>
             </div>
         </div>
     </nav>
 
+    <!-- Sidebar Navigation (shown after login) -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <button class="close-sidebar" id="closeSidebar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-section">
+                <h3>Navigation</h3>
+                <ul>
+                    <li><a href="#" class="nav-item" data-section="teams"><i class="fas fa-users"></i> <span>My Teams</span></a></li>
+                    <li><a href="#" class="nav-item" data-section="tasks"><i class="fas fa-tasks"></i> <span>All Tasks</span></a></li>
+                    <li><a href="#" class="nav-item" data-section="activity"><i class="fas fa-history"></i> <span>Activity</span></a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>Quick Actions</h3>
+                <ul>
+                    <li><a href="#" id="sidebarCreateTeam"><i class="fas fa-plus-circle"></i> <span>Create Team</span></a></li>
+                    <li><a href="#" id="sidebarJoinTeam"><i class="fas fa-user-plus"></i> <span>Join Team</span></a></li>
+                    <li><a href="#" id="sidebarCreateTask"><i class="fas fa-plus-square"></i> <span>New Task</span></a></li>
+                </ul>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar"><span id="userInitial">U</span></div>
+                    <div class="user-details">
+                        <p id="sidebarUserName">User</p>
+                        <p id="sidebarUserEmail">user@email.com</p>
+                    </div>
+                </div>
+                <button id="sidebarLogout" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </nav>
+    </div>
+
     <!-- Main Content -->
-    <main class="container">
+    <main class="main-content">
         <!-- Login/Register Forms -->
         <div id="authSection" class="auth-section">
             <div class="auth-container">
@@ -63,9 +106,12 @@
         <!-- Dashboard (hidden initially) -->
         <div id="dashboard" style="display: none;">
             <div class="dashboard-header">
-                <h2>Welcome, <span id="userName"></span></h2>
-                <button id="logoutBtn" class="btn-secondary">
-                    <i class="fas fa-sign-out-alt"></i> Logout
+                <div>
+                    <h2 id="dashboardTitle">Welcome, <span id="userName"></span></h2>
+                    <p class="dashboard-subtitle" id="dashboardSubtitle">Manage your teams and tasks efficiently</p>
+                </div>
+                <button id="sidebarToggle" class="btn-sidebar-toggle">
+                    <i class="fas fa-bars"></i> Menu
                 </button>
             </div>
 
@@ -119,6 +165,9 @@
             </div>
         </div>
     </main>
+
+    <!-- Overlay for sidebar -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
     <!-- Modals -->
     <div id="createTeamModal" class="modal">

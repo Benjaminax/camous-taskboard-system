@@ -56,7 +56,94 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     setupEventListeners();
+    setupSidebarListeners();
 });
+
+// Setup Sidebar Listeners
+function setupSidebarListeners() {
+    const hamburger = document.getElementById('hamburger');
+    const sidebar = document.getElementById('sidebar');
+    const closeSidebar = document.getElementById('closeSidebar');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const mainContent = document.querySelector('.main-content');
+    
+    // Toggle sidebar
+    hamburger?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = sidebar.classList.toggle('open');
+        hamburger.classList.toggle('active');
+        sidebarOverlay.classList.toggle('active');
+        if (mainContent) mainContent.classList.toggle('sidebar-open');
+    });
+    
+    // Close sidebar
+    closeSidebar?.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        hamburger.classList.remove('active');
+        sidebarOverlay.classList.remove('active');
+        if (mainContent) mainContent.classList.remove('sidebar-open');
+    });
+    
+    // Close sidebar when overlay clicked
+    sidebarOverlay?.addEventListener('click', () => {
+        sidebar.classList.remove('open');
+        hamburger.classList.remove('active');
+        sidebarOverlay.classList.remove('active');
+        if (mainContent) mainContent.classList.remove('sidebar-open');
+    });
+    
+    // Sidebar buttons
+    document.getElementById('sidebarCreateTeam')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeSidebarPanel();
+        openModal('createTeamModal');
+    });
+    
+    document.getElementById('sidebarJoinTeam')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeSidebarPanel();
+        openModal('joinTeamModal');
+    });
+    
+    document.getElementById('sidebarCreateTask')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeSidebarPanel();
+        openModal('createTaskModal');
+    });
+    
+    document.getElementById('sidebarLogout')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        closeSidebarPanel();
+        handleLogout();
+    });
+    
+    // Sidebar menu toggle button
+    document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+        hamburger?.click();
+    });
+    
+    // Sidebar nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const section = item.dataset.section;
+            closeSidebarPanel();
+            // Could add section switching here if needed
+        });
+    });
+}
+
+function closeSidebarPanel() {
+    const sidebar = document.getElementById('sidebar');
+    const hamburger = document.getElementById('hamburger');
+    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const mainContent = document.querySelector('.main-content');
+    
+    sidebar.classList.remove('open');
+    hamburger.classList.remove('active');
+    sidebarOverlay.classList.remove('active');
+    if (mainContent) mainContent.classList.remove('sidebar-open');
+}
 
 // Setup Event Listeners
 function setupEventListeners() {
@@ -570,7 +657,16 @@ async function fetchUserData(token) {
         };
         
         // Set user name (you might need an API endpoint to get full user details)
-        document.getElementById('userName').textContent = currentUser.email.split('@')[0];
+        const userName = currentUser.email.split('@')[0];
+        document.getElementById('userName').textContent = userName;
+        
+        // Update sidebar with user info
+        document.getElementById('sidebarUserName').textContent = userName;
+        document.getElementById('sidebarUserEmail').textContent = currentUser.email;
+        
+        // Set user initial
+        const initial = currentUser.email.charAt(0).toUpperCase();
+        document.getElementById('userInitial').textContent = initial;
         
         showDashboard();
         loadUserTeams();
@@ -583,12 +679,15 @@ async function fetchUserData(token) {
 function showDashboard() {
     authSection.style.display = 'none';
     dashboard.style.display = 'block';
+    document.getElementById('sidebar').style.display = 'block';
 }
 
 function showAuth() {
     authSection.style.display = 'block';
     dashboard.style.display = 'none';
     teamDashboard.style.display = 'none';
+    document.getElementById('sidebar').style.display = 'none';
+    closeSidebarPanel();
 }
 
 function switchTab(tab) {
