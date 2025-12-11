@@ -161,18 +161,18 @@ function setupEventListeners() {
     // Register form
     document.getElementById('registerFormElement').addEventListener('submit', handleRegister);
     
-    // Logout
-    document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+    // Logout - use optional chaining to handle missing element
+    document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
     
     // Team actions
-    document.getElementById('createTeamBtn').addEventListener('click', () => openModal('createTeamModal'));
-    document.getElementById('joinTeamBtn').addEventListener('click', () => openModal('joinTeamModal'));
+    document.getElementById('createTeamBtn')?.addEventListener('click', () => openModal('createTeamModal'));
+    document.getElementById('joinTeamBtn')?.addEventListener('click', () => openModal('joinTeamModal'));
     
     // Task actions
-    document.getElementById('createTaskBtn').addEventListener('click', () => openModal('createTaskModal'));
+    document.getElementById('createTaskBtn')?.addEventListener('click', () => openModal('createTaskModal'));
     
     // Task filter
-    taskFilter.addEventListener('change', loadTeamTasks);
+    taskFilter?.addEventListener('change', loadTeamTasks);
     
     // Modal forms
     document.getElementById('createTeamForm').addEventListener('submit', handleCreateTeam);
