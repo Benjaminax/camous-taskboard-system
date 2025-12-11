@@ -2,243 +2,243 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Academic City - Task Collaboration Board</title>
-	<link rel="stylesheet" href="style.css">
-	<link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700&display=swap" rel="stylesheet">
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic City - Task Collaboration Board</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-	<!-- Navigation Bar -->
-	<nav class="navbar">
-		<div class="nav-container">
-			<div class="logo">
-				<i class="fas fa-tasks"></i>
-				<h1>Academic City TaskBoard</h1>
-			</div>
-			<button class="hamburger" id="hamburger">
-				<span></span>
-				<span></span>
-				<span></span>
-			</button>
-			<div class="nav-links" id="navLinks">
-				<a href="#" id="loginBtn">Login</a>
-				<a href="#" id="registerBtn">Register</a>
-			</div>
-		</div>
-	</nav>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <i class="fas fa-tasks"></i>
+                <h1>Academic City TaskBoard</h1>
+            </div>
+            <button class="hamburger" id="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-links" id="navLinks">
+                <a href="#" id="loginBtn">Login</a>
+                <a href="#" id="registerBtn">Register</a>
+            </div>
+        </div>
+    </nav>
 
-	<!-- Sidebar Navigation (shown after login) -->
-	<div class="sidebar" id="sidebar">
-		<div class="sidebar-header">
-			<button class="close-sidebar" id="closeSidebar">
-				<i class="fas fa-times"></i>
-			</button>
-		</div>
-		<nav class="sidebar-nav">
-			<div class="sidebar-section">
-				<h3>Navigation</h3>
-				<ul>
-					<li><a href="#" class="nav-item" data-section="teams"><i class="fas fa-users"></i> <span>My Teams</span></a></li>
-					<li><a href="#" class="nav-item" data-section="tasks"><i class="fas fa-tasks"></i> <span>All Tasks</span></a></li>
-					<li><a href="#" class="nav-item" data-section="activity"><i class="fas fa-history"></i> <span>Activity</span></a></li>
-				</ul>
-			</div>
-			<div class="sidebar-section">
-				<h3>Quick Actions</h3>
-				<ul>
-					<li><a href="#" id="sidebarCreateTeam"><i class="fas fa-plus-circle"></i> <span>Create Team</span></a></li>
-					<li><a href="#" id="sidebarJoinTeam"><i class="fas fa-user-plus"></i> <span>Join Team</span></a></li>
-					<li><a href="#" id="sidebarCreateTask"><i class="fas fa-plus-square"></i> <span>New Task</span></a></li>
-				</ul>
-			</div>
-			<div class="sidebar-footer">
-				<div class="user-info">
-					<div class="user-avatar"><span id="userInitial">U</span></div>
-					<div class="user-details">
-						<p id="sidebarUserName">User</p>
-						<p id="sidebarUserEmail">user@email.com</p>
-					</div>
-				</div>
-				<button id="sidebarLogout" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
-			</div>
-		</nav>
-	</div>
+    <!-- Sidebar Navigation (shown after login) -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <button class="close-sidebar" id="closeSidebar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="sidebar-section">
+                <h3>Navigation</h3>
+                <ul>
+                    <li><a href="#" class="nav-item" data-section="teams"><i class="fas fa-users"></i> <span>My Teams</span></a></li>
+                    <li><a href="#" class="nav-item" data-section="tasks"><i class="fas fa-tasks"></i> <span>All Tasks</span></a></li>
+                    <li><a href="#" class="nav-item" data-section="activity"><i class="fas fa-history"></i> <span>Activity</span></a></li>
+                </ul>
+            </div>
+            <div class="sidebar-section">
+                <h3>Quick Actions</h3>
+                <ul>
+                    <li><a href="#" id="sidebarCreateTeam"><i class="fas fa-plus-circle"></i> <span>Create Team</span></a></li>
+                    <li><a href="#" id="sidebarJoinTeam"><i class="fas fa-user-plus"></i> <span>Join Team</span></a></li>
+                    <li><a href="#" id="sidebarCreateTask"><i class="fas fa-plus-square"></i> <span>New Task</span></a></li>
+                </ul>
+            </div>
+            <div class="sidebar-footer">
+                <div class="user-info">
+                    <div class="user-avatar"><span id="userInitial">U</span></div>
+                    <div class="user-details">
+                        <p id="sidebarUserName">User</p>
+                        <p id="sidebarUserEmail">user@email.com</p>
+                    </div>
+                </div>
+                <button id="sidebarLogout" class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </nav>
+    </div>
 
-	<!-- Main Content -->
-	<main class="main-content">
-		<!-- Login/Register Forms -->
-		<div id="authSection" class="auth-section">
-			<div class="auth-container">
-				<div class="auth-tabs">
-					<button class="tab-btn active" data-tab="login">Login</button>
-					<button class="tab-btn" data-tab="register">Register</button>
-				</div>
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Login/Register Forms -->
+        <div id="authSection" class="auth-section">
+            <div class="auth-container">
+                <div class="auth-tabs">
+                    <button class="tab-btn active" data-tab="login">Login</button>
+                    <button class="tab-btn" data-tab="register">Register</button>
+                </div>
                 
-				<div class="auth-form" id="loginForm">
-					<h2>Student Login</h2>
-					<form id="loginFormElement">
-						<input type="email" id="loginEmail" placeholder="Academic Email" required>
-						<input type="password" id="loginPassword" placeholder="Password" required>
-						<button type="submit" class="btn-primary">Login</button>
-					</form>
-					<div class="test-credentials">
-						<p><strong>Test Account:</strong></p>
-						<p>Email: kwame.nkrumah@academiccity.edu.gh</p>
-						<p>Password: password123</p>
-					</div>
-				</div>
+                <div class="auth-form" id="loginForm">
+                    <h2>Student Login</h2>
+                    <form id="loginFormElement">
+                        <input type="email" id="loginEmail" placeholder="Academic Email" required>
+                        <input type="password" id="loginPassword" placeholder="Password" required>
+                        <button type="submit" class="btn-primary">Login</button>
+                    </form>
+                    <div class="test-credentials">
+                        <p><strong>Test Account:</strong></p>
+                        <p>Email: kwame.nkrumah@academiccity.edu.gh</p>
+                        <p>Password: password123</p>
+                    </div>
+                </div>
                 
-				<div class="auth-form" id="registerForm" style="display: none;">
-					<h2>Student Registration</h2>
-					<form id="registerFormElement">
-						<input type="text" id="regStudentId" placeholder="Student ID (e.g., ACU2023001)" required>
-						<input type="text" id="regFullName" placeholder="Full Name" required>
-						<input type="email" id="regEmail" placeholder="Academic Email" required>
-						<input type="password" id="regPassword" placeholder="Password (min 6 characters)" required>
-						<button type="submit" class="btn-primary">Register</button>
-					</form>
-				</div>
-			</div>
-		</div>
+                <div class="auth-form" id="registerForm" style="display: none;">
+                    <h2>Student Registration</h2>
+                    <form id="registerFormElement">
+                        <input type="text" id="regStudentId" placeholder="Student ID (e.g., ACU2023001)" required>
+                        <input type="text" id="regFullName" placeholder="Full Name" required>
+                        <input type="email" id="regEmail" placeholder="Academic Email" required>
+                        <input type="password" id="regPassword" placeholder="Password (min 6 characters)" required>
+                        <button type="submit" class="btn-primary">Register</button>
+                    </form>
+                </div>
+            </div>
+        </div>
 
-		<!-- Dashboard (hidden initially) -->
-		<div id="dashboard" style="display: none;">
-			<div class="dashboard-header">
-				<div>
-					<h2 id="dashboardTitle">Welcome, <span id="userName"></span></h2>
-					<p class="dashboard-subtitle" id="dashboardSubtitle">Manage your teams and tasks efficiently</p>
-				</div>
-				<button id="sidebarToggle" class="btn-sidebar-toggle">
-					<i class="fas fa-bars"></i> Menu
-				</button>
-			</div>
+        <!-- Dashboard (hidden initially) -->
+        <div id="dashboard" style="display: none;">
+            <div class="dashboard-header">
+                <div>
+                    <h2 id="dashboardTitle">Welcome, <span id="userName"></span></h2>
+                    <p class="dashboard-subtitle" id="dashboardSubtitle">Manage your teams and tasks efficiently</p>
+                </div>
+                <button id="sidebarToggle" class="btn-sidebar-toggle">
+                    <i class="fas fa-bars"></i> Menu
+                </button>
+            </div>
 
-			<!-- Teams Section -->
-			<div class="teams-section">
-				<div class="section-header">
-					<h3>Your Teams</h3>
-					<div class="team-actions">
-						<button id="createTeamBtn" class="btn-primary">
-							<i class="fas fa-plus"></i> Create Team
-						</button>
-						<button id="joinTeamBtn" class="btn-secondary">
-							<i class="fas fa-user-plus"></i> Join Team
-						</button>
-					</div>
-				</div>
-				<div id="teamsList" class="teams-grid"></div>
-			</div>
+            <!-- Teams Section -->
+            <div class="teams-section">
+                <div class="section-header">
+                    <h3>Your Teams</h3>
+                    <div class="team-actions">
+                        <button id="createTeamBtn" class="btn-primary">
+                            <i class="fas fa-plus"></i> Create Team
+                        </button>
+                        <button id="joinTeamBtn" class="btn-secondary">
+                            <i class="fas fa-user-plus"></i> Join Team
+                        </button>
+                    </div>
+                </div>
+                <div id="teamsList" class="teams-grid"></div>
+            </div>
 
-			<!-- Selected Team Dashboard -->
-			<div id="teamDashboard" style="display: none;">
-				<div class="section-header">
-					<h3 id="teamName"></h3>
-					<div class="task-actions">
-						<button id="createTaskBtn" class="btn-primary">
-							<i class="fas fa-plus"></i> New Task
-						</button>
-						<select id="taskFilter">
-							<option value="all">All Tasks</option>
-							<option value="Pending">Pending</option>
-							<option value="In Progress">In Progress</option>
-							<option value="Completed">Completed</option>
-						</select>
-					</div>
-				</div>
+            <!-- Selected Team Dashboard -->
+            <div id="teamDashboard" style="display: none;">
+                <div class="section-header">
+                    <h3 id="teamName"></h3>
+                    <div class="task-actions">
+                        <button id="createTaskBtn" class="btn-primary">
+                            <i class="fas fa-plus"></i> New Task
+                        </button>
+                        <select id="taskFilter">
+                            <option value="all">All Tasks</option>
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                </div>
 
-				<!-- Team Stats -->
-				<div id="teamStats" class="stats-grid"></div>
+                <!-- Team Stats -->
+                <div id="teamStats" class="stats-grid"></div>
 
-				<!-- Team Members -->
-				<div class="members-section">
-					<h4>Team Members</h4>
-					<div id="teamMembers" class="members-list"></div>
-				</div>
+                <!-- Team Members -->
+                <div class="members-section">
+                    <h4>Team Members</h4>
+                    <div id="teamMembers" class="members-list"></div>
+                </div>
 
-				<!-- Tasks List -->
-				<div class="tasks-section">
-					<h4>Tasks</h4>
-					<div id="tasksList" class="tasks-grid"></div>
-				</div>
-			</div>
-		</div>
-	</main>
+                <!-- Tasks List -->
+                <div class="tasks-section">
+                    <h4>Tasks</h4>
+                    <div id="tasksList" class="tasks-grid"></div>
+                </div>
+            </div>
+        </div>
+    </main>
 
-	<!-- Overlay for sidebar -->
-	<div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <!-- Overlay for sidebar -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-	<!-- Modals -->
-	<div id="createTeamModal" class="modal">
-		<div class="modal-content">
-			<span class="close">&times;</span>
-			<h3>Create New Team</h3>
-			<form id="createTeamForm">
-				<input type="text" id="teamNameInput" placeholder="Team Name" required>
-				<button type="submit" class="btn-primary">Create Team</button>
-			</form>
-		</div>
-	</div>
+    <!-- Modals -->
+    <div id="createTeamModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Create New Team</h3>
+            <form id="createTeamForm">
+                <input type="text" id="teamNameInput" placeholder="Team Name" required>
+                <button type="submit" class="btn-primary">Create Team</button>
+            </form>
+        </div>
+    </div>
 
-	<div id="joinTeamModal" class="modal">
-		<div class="modal-content">
-			<span class="close">&times;</span>
-			<h3>Join Team</h3>
-			<form id="joinTeamForm">
-				<input type="text" id="teamCodeInput" placeholder="Team Code" required>
-				<button type="submit" class="btn-primary">Join Team</button>
-			</form>
-		</div>
-	</div>
+    <div id="joinTeamModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Join Team</h3>
+            <form id="joinTeamForm">
+                <input type="text" id="teamCodeInput" placeholder="Team Code" required>
+                <button type="submit" class="btn-primary">Join Team</button>
+            </form>
+        </div>
+    </div>
 
-	<div id="createTaskModal" class="modal">
-		<div class="modal-content">
-			<span class="close">&times;</span>
-			<h3>Create New Task</h3>
-			<form id="createTaskForm">
-				<input type="text" id="taskTitle" placeholder="Task Title" required>
-				<textarea id="taskDescription" placeholder="Description" rows="3"></textarea>
-				<select id="taskPriority" required>
-					<option value="Low">Low Priority</option>
-					<option value="Medium" selected>Medium Priority</option>
-					<option value="High">High Priority</option>
-				</select>
-				<select id="taskAssignee" required></select>
-				<input type="date" id="taskDueDate" required>
-				<button type="submit" class="btn-primary">Create Task</button>
-			</form>
-		</div>
-	</div>
+    <div id="createTaskModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Create New Task</h3>
+            <form id="createTaskForm">
+                <input type="text" id="taskTitle" placeholder="Task Title" required>
+                <textarea id="taskDescription" placeholder="Description" rows="3"></textarea>
+                <select id="taskPriority" required>
+                    <option value="Low">Low Priority</option>
+                    <option value="Medium" selected>Medium Priority</option>
+                    <option value="High">High Priority</option>
+                </select>
+                <select id="taskAssignee" required></select>
+                <input type="date" id="taskDueDate" required>
+                <button type="submit" class="btn-primary">Create Task</button>
+            </form>
+        </div>
+    </div>
 
-	<div id="editTaskModal" class="modal">
-		<div class="modal-content">
-			<span class="close">&times;</span>
-			<h3>Edit Task</h3>
-			<form id="editTaskForm">
-				<input type="hidden" id="editTaskId">
-				<input type="text" id="editTaskTitle" placeholder="Task Title" required>
-				<textarea id="editTaskDescription" placeholder="Description" rows="3"></textarea>
-				<select id="editTaskStatus" required>
-					<option value="Pending">Pending</option>
-					<option value="In Progress">In Progress</option>
-					<option value="Completed">Completed</option>
-				</select>
-				<select id="editTaskPriority" required>
-					<option value="Low">Low Priority</option>
-					<option value="Medium">Medium Priority</option>
-					<option value="High">High Priority</option>
-				</select>
-				<select id="editTaskAssignee"></select>
-				<input type="date" id="editTaskDueDate" required>
-				<div class="modal-actions">
-					<button type="submit" class="btn-primary">Update Task</button>
-					<button type="button" id="deleteTaskBtn" class="btn-danger">Delete Task</button>
-				</div>
-			</form>
-		</div>
-	</div>
+    <div id="editTaskModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>Edit Task</h3>
+            <form id="editTaskForm">
+                <input type="hidden" id="editTaskId">
+                <input type="text" id="editTaskTitle" placeholder="Task Title" required>
+                <textarea id="editTaskDescription" placeholder="Description" rows="3"></textarea>
+                <select id="editTaskStatus" required>
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+                <select id="editTaskPriority" required>
+                    <option value="Low">Low Priority</option>
+                    <option value="Medium">Medium Priority</option>
+                    <option value="High">High Priority</option>
+                </select>
+                <select id="editTaskAssignee"></select>
+                <input type="date" id="editTaskDueDate" required>
+                <div class="modal-actions">
+                    <button type="submit" class="btn-primary">Update Task</button>
+                    <button type="button" id="deleteTaskBtn" class="btn-danger">Delete Task</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
-	<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>

@@ -362,7 +362,7 @@ body {
     }
 }
 
-/* Container -->
+/* Container */
 .container {
     max-width: 1200px;
     margin: 2rem auto;
@@ -372,11 +372,11 @@ body {
 /* Auth Section */
 .auth-section {
     background-color: var(--card-bg);
-    border-radius: 8px;
-    padding: 2rem;
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
     box-shadow: var(--shadow-lg);
-    max-width: 400px;
-    margin: 2rem auto;
+    max-width: 420px;
+    margin: 2.5rem auto;
     border: 1px solid var(--border-color);
 }
 
@@ -404,7 +404,7 @@ body {
 
 .auth-form h2 {
     margin-bottom: 1.5rem;
-    color: var(--primary-gray);
+    color: var(--primary-red);
     font-family: 'Montserrat', 'Arial', sans-serif;
     font-weight: 700;
 }
@@ -536,12 +536,13 @@ body {
 
 .team-card {
     background-color: var(--card-bg);
-    border-radius: 8px;
-    padding: 1.5rem;
+    border-radius: 16px;
+    padding: 1.7rem 1.5rem;
     box-shadow: var(--shadow-md);
     cursor: pointer;
     transition: transform 0.3s, box-shadow 0.3s;
-    border-left: 4px solid var(--primary-red);
+    border-left: 6px solid var(--primary-red);
+    border-bottom: none;
 }
 
 .team-card:hover {
@@ -569,15 +570,15 @@ body {
 
 .stat-card {
     background-color: var(--card-bg);
-    border-radius: 8px;
-    padding: 1rem;
+    border-radius: 12px;
+    padding: 1.2rem;
     text-align: center;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-color);
 }
 
 .stat-card h4 {
-    font-size: 2rem;
+    font-size: 2.2rem;
     color: var(--primary-red);
     margin-bottom: 0.5rem;
     font-family: 'Montserrat', 'Arial', sans-serif;
@@ -598,26 +599,27 @@ body {
 
 .member-card {
     background-color: var(--card-bg);
-    border-radius: 8px;
-    padding: 1rem;
+    border-radius: 12px;
+    padding: 1.1rem;
     display: flex;
     align-items: center;
     gap: 1rem;
     box-shadow: var(--shadow-sm);
-    min-width: 200px;
+    min-width: 220px;
     border: 1px solid var(--border-color);
 }
 
 .member-avatar {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     background-color: var(--primary-light-gray);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: var(--primary-gray);
     font-weight: bold;
+    font-size: 1.3rem;
 }
 
 /* Tasks Grid */
@@ -629,29 +631,30 @@ body {
 
 .task-card {
     background-color: var(--card-bg);
-    border-radius: 8px;
-    padding: 1.5rem;
+    border-radius: 14px;
+    padding: 1.5rem 1.2rem;
     box-shadow: var(--shadow-md);
     cursor: pointer;
-    transition: transform 0.3s;
-    border-left: 4px solid;
+    transition: transform 0.3s, box-shadow 0.3s;
+    border-left: 6px solid var(--primary-red);
+    border-bottom: none;
 }
 
 .task-card:hover {
-    transform: translateY(-4px) scale(1.01);
+    transform: translateY(-4px);
     box-shadow: var(--shadow-lg);
 }
 
 .task-card.pending {
-    border-left-color: var(--warning-color);
+    border-left-color: var(--primary-light-gray);
 }
 
 .task-card.in-progress {
-    border-left-color: var(--info-color);
+    border-left-color: var(--primary-red);
 }
 
 .task-card.completed {
-    border-left-color: var(--success-color);
+    border-left-color: var(--primary-gray);
 }
 
 .task-header {
@@ -662,7 +665,7 @@ body {
 }
 
 .task-title {
-    font-weight: 600;
+    font-weight: 700;
     margin-bottom: 0.5rem;
     font-family: 'Montserrat', 'Arial', sans-serif;
     color: var(--primary-gray);
