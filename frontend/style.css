@@ -47,9 +47,10 @@ body {
     border-radius: 20px;
     box-shadow: var(--shadow-lg);
     width: 100%;
-    max-width: 400px;
+    max-width: 450px;
     overflow: hidden;
     border: 1px solid var(--border-color);
+    margin: 0 auto;
 }
 
 .auth-header {
@@ -118,6 +119,7 @@ body {
 
 .auth-forms {
     padding: 2rem;
+    text-align: center;
 }
 
 .auth-form {
