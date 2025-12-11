@@ -462,16 +462,6 @@ app.get('/api/test', (req, res) => {
     res.json({ message: 'Campus Taskboard API is running!' });
 });
 
-// Fallback for 404 to return JSON instead of HTML
-app.use((req, res) => {
-    res.status(404).json({ error: 'Not found' });
-});
-
-// Start server
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
-
 // Get all users (for assignment across whole app)
 app.get('/api/users', authenticateToken, async (req, res) => {
     try {
@@ -687,4 +677,14 @@ app.delete('/api/admin/teams/:id', authenticateToken, requireAdmin, async (req, 
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
+
+// Fallback for 404 to return JSON instead of HTML
+app.use((req, res) => {
+    res.status(404).json({ error: 'Not found' });
+});
+
+// Start server
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
