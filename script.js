@@ -72,14 +72,24 @@ function trackAnalytics(eventName, properties = {}) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    // Clear any existing user state
+    currentUser = null;
+    currentTeam = null;
+    teams = [];
+    tasks = [];
+    
     // First, ensure auth section is visible and dashboard is hidden
     const authSection = document.getElementById('authSection');
     const dashboard = document.getElementById('dashboard');
     const sidebar = document.getElementById('sidebar');
     
-    authSection.style.display = 'block';
-    dashboard.style.display = 'none';
-    sidebar.style.display = 'none';
+    if (authSection) authSection.style.display = 'block';
+    if (dashboard) dashboard.style.display = 'none';
+    if (sidebar) sidebar.style.display = 'none';
+    
+    // Clear username display
+    const userNameElement = document.getElementById('userName');
+    if (userNameElement) userNameElement.textContent = '';
     
     initializeAnalytics();
     setupEventListeners();
@@ -91,8 +101,15 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Validate token by decoding it
             const payload = JSON.parse(atob(token.split('.')[1]));
-            // If we get here, token is valid (at least syntactically)
-            fetchUserData(token);
+            // Check if token is expired (basic check)
+            if (payload.exp && payload.exp * 1000 < Date.now()) {
+                // Token is expired
+                localStorage.removeItem('token');
+                showAuth();
+            } else {
+                // If we get here, token is valid (at least syntactically)
+                fetchUserData(token);
+            }
         } catch (error) {
             // Token is invalid, clear it and show auth
             console.error('Invalid token:', error);
@@ -199,6 +216,17 @@ function setupEventListeners() {
             const tab = btn.dataset.tab;
             switchTab(tab);
         });
+    });
+    
+    // Nav buttons for login/register
+    document.getElementById('loginBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchTab('login');
+    });
+    
+    document.getElementById('registerBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchTab('register');
     });
     
     // Login form
