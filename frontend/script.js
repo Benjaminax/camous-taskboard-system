@@ -341,6 +341,11 @@ async function loadUserTeams() {
             teams = await response.json();
             renderTeams();
             updateEmptyState();
+            
+            // If home dashboard is currently visible, refresh it to show stats or welcome message
+            if (document.getElementById('homeDashboard').style.display === 'block') {
+                showHome();
+            }
         }
     } catch (error) {
         console.error('Load teams error:', error);
@@ -1247,19 +1252,37 @@ function showHome() {
     showDashboard();
     browseTeamsSection.style.display = 'none';
     document.getElementById('adminPanel').style.display = 'none';
+    
+    // Always show home dashboard
+    teamDashboard.style.display = 'none';
+    emptyState.style.display = 'none';
+    document.getElementById('homeDashboard').style.display = 'block';
+    
     if (!teams || teams.length === 0) {
-        teamDashboard.style.display = 'none';
-        emptyState.style.display = 'flex';
-        document.getElementById('homeDashboard').style.display = 'block';
-    } else if (currentTeam) {
-        teamDashboard.style.display = 'block';
-        emptyState.style.display = 'none';
+        // Show welcome message in home dashboard when no teams
+        document.getElementById('homeStats').innerHTML = `
+            <div class="welcome-message" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+                <i class="fas fa-users" style="font-size: 3rem; color: #666; margin-bottom: 1rem;"></i>
+                <h2 style="color: #333; margin-bottom: 1rem;">Welcome to Your Dashboard</h2>
+                <p style="color: #666; margin-bottom: 2rem;">Get started by creating a new team, browsing existing teams, or joining a team with a code.</p>
+                <div class="empty-actions" style="justify-content: center;">
+                    <button id="createTeamBtnMain" class="btn-primary" style="margin: 0 0.5rem;">
+                        <i class="fas fa-plus"></i> Create Team
+                    </button>
+                    <button id="browseTeamsBtnMain" class="btn-secondary" style="margin: 0 0.5rem;">
+                        <i class="fas fa-search"></i> Browse Teams
+                    </button>
+                    <button id="joinTeamBtnMain" class="btn-secondary" style="margin: 0 0.5rem;">
+                        <i class="fas fa-user-plus"></i> Join Team
+                    </button>
+                </div>
+            </div>
+        `;
+        document.getElementById('homeRecentTasks').innerHTML = '';
     } else {
-        teamDashboard.style.display = 'none';
-        emptyState.style.display = 'flex';
-        document.getElementById('homeDashboard').style.display = 'block';
+        // Load normal home dashboard with stats
+        loadHomeDashboard();
     }
-    loadHomeDashboard();
 }
 
 // Leave team handler
