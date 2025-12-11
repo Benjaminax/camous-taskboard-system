@@ -153,6 +153,7 @@ async function handleLogin(e) {
     submitBtn.disabled = true;
     
     try {
+        console.log('Sending login request to:', `${API_BASE_URL}/api/login`);
         const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
             headers: { 
@@ -165,7 +166,9 @@ async function handleLogin(e) {
             })
         });
         
+        console.log('Login response status:', response.status);
         const data = await response.json();
+        console.log('Login response data:', data);
         
         if (response.ok) {
             currentUser = null;

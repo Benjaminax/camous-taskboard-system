@@ -75,6 +75,7 @@ async function addMissingColumns() {
 
 async function createTestUser() {
     try {
+        console.log('Checking for test user...');
         // Check if test user already exists
         const userCheck = await pool.query("SELECT 1 FROM users WHERE email = $1", ['student001@academiccity.edu']);
         if (userCheck.rows.length > 0) {
@@ -82,6 +83,7 @@ async function createTestUser() {
             return;
         }
         
+        console.log('Creating test user...');
         // Create test user
         const passwordHash = await bcrypt.hash('password123', 10);
         await pool.query(
@@ -171,6 +173,7 @@ app.post('/api/register', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
     try {
+        console.log('Login attempt:', req.body);
         const { email, password } = req.body;
         
         const result = await pool.query(
@@ -178,12 +181,16 @@ app.post('/api/login', async (req, res) => {
             [email]
         );
         
+        console.log('User lookup result:', result.rows.length > 0 ? 'User found' : 'User not found');
+        
         if (result.rows.length === 0) {
             return res.status(400).json({ error: 'Invalid credentials' });
         }
         
         const user = result.rows[0];
         const validPassword = await bcrypt.compare(password, user.password_hash);
+        
+        console.log('Password validation:', validPassword ? 'Valid' : 'Invalid');
         
         if (!validPassword) {
             return res.status(400).json({ error: 'Invalid credentials' });
@@ -195,6 +202,7 @@ app.post('/api/login', async (req, res) => {
 
         const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' });
         
+        console.log('Login successful for user:', user.email);
         res.json({
             token,
             user: {
@@ -206,6 +214,7 @@ app.post('/api/login', async (req, res) => {
             }
         });
     } catch (error) {
+        console.error('Login error:', error);
         res.status(500).json({ error: error.message });
     }
 });
