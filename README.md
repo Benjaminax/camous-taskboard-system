@@ -81,6 +81,7 @@ A collaborative task management platform for Academic City University students t
    - `users` (id, student_id, full_name, email, password_hash, is_admin)
    - `teams` (id, team_name, team_code, created_by, description, max_members)
    - `team_members` (team_id, user_id)
+   - `join_requests` (id, team_id, user_id, requested_at, status)
    - `tasks` (id, title, description, priority, assigned_to, team_id, created_by, due_date, status, created_at, updated_at)
 
 5. Run the server:

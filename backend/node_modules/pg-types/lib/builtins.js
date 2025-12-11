@@ -71,3 +71,4 @@ module.exports = {
     REGNAMESPACE: 4089,
     REGROLE: 4096
 };
+

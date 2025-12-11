@@ -1,4 +1,4 @@
-// backend/server.js
+
 const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
@@ -9,7 +9,7 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
@@ -18,14 +18,14 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Connection headers for HTTP/2 compatibility
+
 app.use((req, res, next) => {
     res.set('Connection', 'keep-alive');
     res.set('Keep-Alive', 'timeout=5, max=100');
     next();
 });
 
-// Database connection
+
 let pool;
 try {
     pool = new Pool({
@@ -46,10 +46,10 @@ try {
     console.error('Error creating database pool:', err.message);
 }
 
-// JWT Secret
+
 const JWT_SECRET = process.env.JWT_SECRET || 'academic_city_secret_key';
 
-// Authentication middleware
+
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -63,16 +63,16 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-// Require admin middleware route
+
 const requireAdmin = async (req, res, next) => {
     try {
-        // If ADMIN_USER_IDS provided in env to specify admin user(s), use it
+
         if (process.env.ADMIN_USER_IDS) {
             const adminIds = process.env.ADMIN_USER_IDS.split(',').map(id => parseInt(id.trim(), 10));
             if (adminIds.includes(req.user.id)) return next();
         }
 
-        // Otherwise read from users table if is_admin column exists
+
         const result = await pool.query('SELECT is_admin FROM users WHERE id = $1', [req.user.id]);
         if (result.rows.length > 0 && result.rows[0].is_admin) {
             return next();
@@ -84,13 +84,13 @@ const requireAdmin = async (req, res, next) => {
     }
 };
 
-// 1. USER REGISTRATION & AUTHENTICATION
-// Register user
+
+
 app.post('/api/register', async (req, res) => {
     try {
         const { student_id, full_name, email, password } = req.body;
         
-        // Check if user exists
+
         const userExists = await pool.query(
             'SELECT * FROM users WHERE email = $1 OR student_id = $2',
             [email, student_id]
@@ -100,19 +100,19 @@ app.post('/api/register', async (req, res) => {
             return res.status(400).json({ error: 'User already exists' });
         }
         
-        // Hash password
+
         const passwordHash = await bcrypt.hash(password, 10);
         
-        // Insert user
+
         const result = await pool.query(
             'INSERT INTO users (student_id, full_name, email, password_hash) VALUES ($1, $2, $3, $4) RETURNING id, student_id, full_name, email',
             [student_id, full_name, email, passwordHash]
         );
         const createdUser = result.rows[0];
-        // Ensure is_admin boolean present (default false if column exists)
+
         createdUser.is_admin = createdUser.is_admin || false;
 
-        // Sign token similarly to login
+
         const tokenPayload = { id: createdUser.id, email: createdUser.email, student_id: createdUser.student_id, full_name: createdUser.full_name };
         if (typeof createdUser.is_admin !== 'undefined') tokenPayload.is_admin = createdUser.is_admin;
         const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' });
@@ -123,7 +123,7 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// Login user
+
 app.post('/api/login', async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -144,7 +144,7 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ error: 'Invalid credentials' });
         }
         
-        // Create token - include is_admin and full_name if present
+
         const tokenPayload = { id: user.id, email: user.email, student_id: user.student_id, full_name: user.full_name };
         if (typeof user.is_admin !== 'undefined') tokenPayload.is_admin = user.is_admin;
 
@@ -165,8 +165,8 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// 2. TEAM MANAGEMENT
-// Create team
+
+
 app.post('/api/teams', authenticateToken, async (req, res) => {
     try {
         console.log('API: Create team payload', req.body, 'by user', req.user?.id);
@@ -180,7 +180,7 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
                 [team_name, team_code, req.user.id, description, max_members]
             );
         } catch (err) {
-            // Fallback if DB doesn't have optional columns
+
             console.warn('Extended INSERT failed, falling back to basic insert:', err.message);
             result = await pool.query(
                 'INSERT INTO teams (team_name, team_code, created_by) VALUES ($1, $2, $3) RETURNING *',
@@ -189,7 +189,7 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
         }
         console.log('API: Team created successfully', result.rows[0]);
         
-        // Add creator as team member
+
         await pool.query(
             'INSERT INTO team_members (team_id, user_id) VALUES ($1, $2)',
             [result.rows[0].id, req.user.id]
@@ -202,7 +202,7 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
     }
 });
 
-// Get all teams (for browsing)
+
 app.get('/api/teams/all', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
@@ -219,7 +219,7 @@ app.get('/api/teams/all', authenticateToken, async (req, res) => {
     }
 });
 
-// Join team
+
 app.post('/api/teams/join', authenticateToken, async (req, res) => {
     try {
         const { team_code } = req.body;
@@ -235,7 +235,7 @@ app.post('/api/teams/join', authenticateToken, async (req, res) => {
         
         const team = teamResult.rows[0];
         
-        // Check if already a member
+
         const memberCheck = await pool.query(
             'SELECT * FROM team_members WHERE team_id = $1 AND user_id = $2',
             [team.id, req.user.id]
@@ -256,12 +256,12 @@ app.post('/api/teams/join', authenticateToken, async (req, res) => {
     }
 });
 
-// 3. TASK MANAGEMENT
-// Create task
+
+
 app.post('/api/tasks', authenticateToken, async (req, res) => {
     try {
         const { title, description, priority, assigned_to, team_id, due_date } = req.body;
-        // Check membership
+
         if (!await isTeamMember(team_id, req.user.id)) {
             return res.status(403).json({ error: 'You must be a member of the team to create tasks' });
         }
@@ -278,7 +278,7 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
     }
 });
 
-// Get tasks by team
+
 app.get('/api/teams/:teamId/tasks', authenticateToken, async (req, res) => {
     try {
         const { teamId } = req.params;
@@ -309,13 +309,13 @@ app.get('/api/teams/:teamId/tasks', authenticateToken, async (req, res) => {
     }
 });
 
-// Update task
+
 app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         const { title, description, status, priority, assigned_to, due_date } = req.body;
         
-        // Ensure user is a team member of the task's team
+
         const taskRes = await pool.query('SELECT team_id, created_by FROM tasks WHERE id = $1', [id]);
         if (taskRes.rows.length === 0) return res.status(404).json({ error: 'Task not found' });
         const taskTeamId = taskRes.rows[0].team_id;
@@ -341,12 +341,12 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// Delete task
+
 app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
     try {
         const { id } = req.params;
         
-        // Authorization: only task creator or team creator can delete
+
         const taskRes = await pool.query('SELECT * FROM tasks WHERE id = $1', [id]);
         if (taskRes.rows.length === 0) return res.status(404).json({ error: 'Task not found' });
         const task = taskRes.rows[0];
@@ -362,8 +362,8 @@ app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
     }
 });
 
-// 4. DASHBOARD DATA
-// Get user's teams
+
+
 app.get('/api/user/teams', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query(
@@ -378,12 +378,12 @@ app.get('/api/user/teams', authenticateToken, async (req, res) => {
     }
 });
 
-// Get team dashboard data
+
 app.get('/api/teams/:teamId/dashboard', authenticateToken, async (req, res) => {
     try {
         const { teamId } = req.params;
         
-        // Team members
+
         const membersResult = await pool.query(
             `SELECT u.id, u.student_id, u.full_name, u.email,
                     COUNT(t.id) as task_count
@@ -395,7 +395,7 @@ app.get('/api/teams/:teamId/dashboard', authenticateToken, async (req, res) => {
             [teamId]
         );
         
-        // Task summary
+
         const summaryResult = await pool.query(
             `SELECT 
                 COUNT(*) as total_tasks,
@@ -406,16 +406,27 @@ app.get('/api/teams/:teamId/dashboard', authenticateToken, async (req, res) => {
             [teamId]
         );
         
+
+        const requestsResult = await pool.query(
+            `SELECT jr.id, jr.requested_at, u.full_name, u.student_id, u.email
+             FROM join_requests jr
+             JOIN users u ON jr.user_id = u.id
+             WHERE jr.team_id = $1 AND jr.status = 'pending'
+             ORDER BY jr.requested_at DESC`,
+            [teamId]
+        );
+        
         res.json({
             members: membersResult.rows,
-            summary: summaryResult.rows[0]
+            summary: summaryResult.rows[0],
+            join_requests: requestsResult.rows
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Get team members
+
 app.get('/api/teams/:teamId/members', authenticateToken, async (req, res) => {
     try {
         const { teamId } = req.params;
@@ -436,7 +447,7 @@ app.get('/api/teams/:teamId/members', authenticateToken, async (req, res) => {
     }
 });
 
-// Helper function
+
 function generateTeamCode() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let code = '';
@@ -446,7 +457,7 @@ function generateTeamCode() {
     return code;
 }
 
-// Helper: check membership
+
 async function isTeamMember(teamId, userId) {
     try {
         const result = await pool.query('SELECT * FROM team_members WHERE team_id = $1 AND user_id = $2', [teamId, userId]);
@@ -457,12 +468,12 @@ async function isTeamMember(teamId, userId) {
     }
 }
 
-// Test endpoint
+
 app.get('/api/test', (req, res) => {
     res.json({ message: 'Campus Taskboard API is running!' });
 });
 
-// Get all users (for assignment across whole app)
+
 app.get('/api/users', authenticateToken, async (req, res) => {
     try {
         const result = await pool.query('SELECT id, student_id, full_name, email FROM users ORDER BY full_name');
@@ -472,12 +483,12 @@ app.get('/api/users', authenticateToken, async (req, res) => {
     }
 });
 
-// Leave team
+
 app.post('/api/teams/:teamId/leave', authenticateToken, async (req, res) => {
     try {
         const { teamId } = req.params;
 
-        // Check if team exists
+
         const teamResult = await pool.query('SELECT * FROM teams WHERE id = $1', [teamId]);
         if (teamResult.rows.length === 0) return res.status(404).json({ error: 'Team not found' });
 
@@ -493,7 +504,7 @@ app.post('/api/teams/:teamId/leave', authenticateToken, async (req, res) => {
     }
 });
 
-// Delete team (only creator)
+
 app.delete('/api/teams/:teamId', authenticateToken, async (req, res) => {
     try {
         const { teamId } = req.params;
@@ -502,7 +513,7 @@ app.delete('/api/teams/:teamId', authenticateToken, async (req, res) => {
         const team = teamResult.rows[0];
         if (team.created_by !== req.user.id) return res.status(403).json({ error: 'Only the team creator can delete the team' });
 
-        // Delete tasks, team_members, and team
+
         await pool.query('DELETE FROM tasks WHERE team_id = $1', [teamId]);
         await pool.query('DELETE FROM team_members WHERE team_id = $1', [teamId]);
         await pool.query('DELETE FROM teams WHERE id = $1', [teamId]);
@@ -513,7 +524,7 @@ app.delete('/api/teams/:teamId', authenticateToken, async (req, res) => {
     }
 });
 
-// Get user dashboard summary
+
 app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
@@ -531,24 +542,30 @@ app.get('/api/user/dashboard', authenticateToken, async (req, res) => {
     }
 });
 
-// Request to join a team by id (directly joins for now)
+
 app.post('/api/teams/:teamId/request-join', authenticateToken, async (req, res) => {
     try {
         const { teamId } = req.params;
         const teamResult = await pool.query('SELECT * FROM teams WHERE id = $1', [teamId]);
         if (teamResult.rows.length === 0) return res.status(404).json({ error: 'Team not found' });
 
+
         const memberCheck = await pool.query('SELECT * FROM team_members WHERE team_id = $1 AND user_id = $2', [teamId, req.user.id]);
         if (memberCheck.rows.length > 0) return res.status(400).json({ error: 'Already a team member' });
 
-        await pool.query('INSERT INTO team_members (team_id, user_id) VALUES ($1, $2)', [teamId, req.user.id]);
-        res.json({ message: 'Joined team successfully' });
+
+        const requestCheck = await pool.query('SELECT * FROM join_requests WHERE team_id = $1 AND user_id = $2 AND status = $3', [teamId, req.user.id, 'pending']);
+        if (requestCheck.rows.length > 0) return res.status(400).json({ error: 'Join request already pending' });
+
+
+        await pool.query('INSERT INTO join_requests (team_id, user_id, requested_at, status) VALUES ($1, $2, NOW(), $3)', [teamId, req.user.id, 'pending']);
+        res.json({ message: 'Join request sent successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
 });
 
-// Invite user to team by id or email
+
 app.post('/api/teams/:teamId/invite', authenticateToken, async (req, res) => {
     try {
         const { teamId } = req.params;
@@ -575,7 +592,7 @@ app.post('/api/teams/:teamId/invite', authenticateToken, async (req, res) => {
     }
 });
 
-// Get recent tasks for current user (assigned to or created by user)
+
 app.get('/api/user/tasks', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
@@ -594,8 +611,8 @@ app.get('/api/user/tasks', authenticateToken, async (req, res) => {
     }
 });
 
-// Admin routes - protected by requireAdmin
-// List all users
+
+
 app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const result = await pool.query('SELECT id, student_id, full_name, email, is_admin FROM users ORDER BY full_name');
@@ -605,7 +622,7 @@ app.get('/api/admin/users', authenticateToken, requireAdmin, async (req, res) =>
     }
 });
 
-// Update user (toggle admin, edit full name/email)
+
 app.put('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
@@ -633,14 +650,14 @@ app.put('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res
     }
 });
 
-// Delete user
+
 app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         if (+id === +req.user.id) {
             return res.status(400).json({ error: 'Admins cannot delete their own account' });
         }
-        // Remove team memberships and delete user, handle tasks created by them (set created_by to null or delete tasks)
+
         await pool.query('DELETE FROM team_members WHERE user_id = $1', [id]);
         await pool.query('DELETE FROM tasks WHERE created_by = $1', [id]);
         await pool.query('UPDATE tasks SET assigned_to = NULL WHERE assigned_to = $1', [id]);
@@ -651,7 +668,7 @@ app.delete('/api/admin/users/:id', authenticateToken, requireAdmin, async (req, 
     }
 });
 
-// Admin teams list
+
 app.get('/api/admin/teams', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const result = await pool.query(
@@ -666,7 +683,7 @@ app.get('/api/admin/teams', authenticateToken, requireAdmin, async (req, res) =>
     }
 });
 
-// Admin delete team
+
 app.delete('/api/admin/teams/:id', authenticateToken, requireAdmin, async (req, res) => {
     try {
         const { id } = req.params;
@@ -679,12 +696,13 @@ app.delete('/api/admin/teams/:id', authenticateToken, requireAdmin, async (req, 
     }
 });
 
-// Fallback for 404 to return JSON instead of HTML
+
 app.use((req, res) => {
     res.status(404).json({ error: 'Not found' });
 });
 
-// Start server
+
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
+

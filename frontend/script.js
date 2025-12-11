@@ -1,13 +1,10 @@
-const API_BASE_URL = 'https://camous-taskboard-system.onrender.com';
 
-// State
 let currentUser = null;
 let currentTeam = null;
 let teams = [];
 let tasks = [];
 let allTeams = [];
 
-// DOM Elements
 const authSection = document.getElementById('authSection');
 const dashboard = document.getElementById('dashboard');
 const loginForm = document.getElementById('loginForm');
@@ -16,16 +13,12 @@ const teamDashboard = document.getElementById('teamDashboard');
 const emptyState = document.getElementById('emptyState');
 const browseTeamsSection = document.getElementById('browseTeamsSection');
 
-// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    // Check for stored token
     const token = localStorage.getItem('token');
     if (token) {
-        // Try to auto-login with token
         try {
             const payload = JSON.parse(atob(token.split('.')[1]));
             if (payload.exp * 1000 > Date.now()) {
-                // Clear all previous state for clean auto-login
                 currentUser = null;
                 currentTeam = null;
                 teams = [];
@@ -58,9 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupEventListeners();
 });
 
-// Setup Event Listeners
 function setupEventListeners() {
-    // Auth tabs
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             const tab = btn.dataset.tab;
@@ -68,18 +59,13 @@ function setupEventListeners() {
         });
     });
     
-    // Login form
     loginForm.addEventListener('submit', handleLogin);
     
-    // Register form
     registerForm.addEventListener('submit', handleRegister);
     
-    // Logout
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
-    // Home button
     const homeBtnEl = document.getElementById('homeBtn');
     if (homeBtnEl) homeBtnEl.addEventListener('click', showHome);
-    // Admin button
     const adminBtnEl = document.getElementById('adminBtn');
     if (adminBtnEl) adminBtnEl.addEventListener('click', showAdmin);
     const adminUsersBtn = document.getElementById('adminUsersBtn');
@@ -87,7 +73,6 @@ function setupEventListeners() {
     const adminTeamsBtn = document.getElementById('adminTeamsBtn');
     if (adminTeamsBtn) adminTeamsBtn.addEventListener('click', showAdminTeams);
     
-    // Team buttons
     document.getElementById('createTeamBtn').addEventListener('click', () => openModal('createTeamModal'));
     document.getElementById('browseTeamsBtn').addEventListener('click', () => showBrowseTeams());
     document.getElementById('joinTeamBtn').addEventListener('click', () => openModal('joinTeamModal'));
@@ -95,7 +80,6 @@ function setupEventListeners() {
     document.getElementById('browseTeamsBtnMain').addEventListener('click', () => showBrowseTeams());
     document.getElementById('joinTeamBtnMain').addEventListener('click', () => openModal('joinTeamModal'));
     
-    // Task actions
     document.getElementById('createTaskBtn').addEventListener('click', () => openModal('createTaskModal'));
     document.getElementById('leaveTeamBtn').addEventListener('click', handleLeaveTeam);
     document.getElementById('deleteTeamBtn').addEventListener('click', handleDeleteTeam);
@@ -103,15 +87,12 @@ function setupEventListeners() {
     document.getElementById('manageMembersBtn').addEventListener('click', () => alert('Member management feature coming soon!'));
     document.getElementById('exportTasksBtn').addEventListener('click', () => alert('Export feature coming soon!'));
     
-    // Task filter
     document.getElementById('taskFilter').addEventListener('change', loadTeamTasks);
     
-    // Team search
     document.getElementById('teamSearch')?.addEventListener('input', filterTeams);
     document.getElementById('modalTeamSearch')?.addEventListener('input', filterAvailableTeams);
     document.getElementById('modalSearchBtn')?.addEventListener('click', loadAvailableTeams);
     
-    // Modal forms
     document.getElementById('createTeamForm').addEventListener('submit', handleCreateTeam);
     document.getElementById('joinTeamForm').addEventListener('submit', handleJoinTeam);
     document.getElementById('requestJoinForm').addEventListener('submit', handleRequestJoin);
@@ -120,10 +101,8 @@ function setupEventListeners() {
     document.getElementById('deleteTaskBtn').addEventListener('click', handleDeleteTask);
     document.getElementById('inviteMemberForm').addEventListener('submit', handleInviteMember);
     
-    // Team code modal
     document.getElementById('closeTeamCodeBtn').addEventListener('click', () => closeModal('teamCodeModal'));
     
-    // Password visibility toggle
     document.querySelectorAll('.toggle-password').forEach(button => {
         button.addEventListener('click', function() {
             const targetId = this.getAttribute('data-target');
@@ -142,14 +121,12 @@ function setupEventListeners() {
         });
     });
     
-    // Close modals
     document.querySelectorAll('.modal .close').forEach(closeBtn => {
         closeBtn.addEventListener('click', () => {
             closeBtn.closest('.modal').style.display = 'none';
         });
     });
     
-    // Close modals on outside click
     window.addEventListener('click', (event) => {
         if (event.target.classList.contains('modal')) {
             event.target.style.display = 'none';
@@ -157,7 +134,6 @@ function setupEventListeners() {
     });
 }
 
-// Auth Functions
 async function handleLogin(e) {
     e.preventDefault();
     
@@ -169,7 +145,6 @@ async function handleLogin(e) {
         return;
     }
     
-    // Show loading state
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
@@ -191,7 +166,6 @@ async function handleLogin(e) {
         const data = await response.json();
         
         if (response.ok) {
-            // Clear all previous state for clean login
             currentUser = null;
             currentTeam = null;
             teams = [];
@@ -204,7 +178,6 @@ async function handleLogin(e) {
             loadUserTeams();
             showAdminIfNeeded();
         } else {
-            // Handle specific error messages
             if (data.error && data.error.includes('Invalid credentials')) {
                 alert('Invalid email or password. Please try again.');
             } else if (data.error && data.error.includes('User not found')) {
@@ -218,7 +191,6 @@ async function handleLogin(e) {
         console.error('Login error:', error);
         alert('Network error. Please check your connection and try again.');
     } finally {
-        // Reset button state
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
     }
@@ -233,7 +205,6 @@ async function handleRegister(e) {
     const password = document.getElementById('regPassword').value.trim();
     const passwordConfirm = document.getElementById('regPasswordConfirm').value.trim();
     
-    // Validation
     if (!studentId || !fullName || !email || !password || !passwordConfirm) {
         alert('Please fill in all fields');
         return;
@@ -249,7 +220,6 @@ async function handleRegister(e) {
         return;
     }
     
-    // Show loading state
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
@@ -279,7 +249,6 @@ async function handleRegister(e) {
             loadUserTeams();
             showAdminIfNeeded();
         } else {
-            // Handle specific error messages
             if (data.error && data.error.includes('already exists')) {
                 alert('An account with this email already exists. Please login instead.');
                 switchTab('login');
@@ -293,7 +262,6 @@ async function handleRegister(e) {
         console.error('Register error:', error);
         alert('Network error. Please check your connection and try again.');
     } finally {
-        // Reset button state
         submitBtn.innerHTML = originalText;
         submitBtn.disabled = false;
     }
@@ -312,19 +280,15 @@ function handleLogout() {
     }
 }
 
-// Tab Switching
 function switchTab(tab) {
-    // Update active tab button
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tab);
     });
     
-    // Show active form
     document.querySelectorAll('.auth-form').forEach(form => {
         form.classList.toggle('active', form.id === `${tab}Form`);
     });
     
-    // Clear forms when switching tabs
     if (tab === 'login') {
         loginForm.reset();
     } else if (tab === 'register') {
@@ -332,7 +296,6 @@ function switchTab(tab) {
     }
 }
 
-// Team Functions
 async function loadUserTeams() {
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/api/user/teams`);
@@ -342,7 +305,6 @@ async function loadUserTeams() {
             renderTeams();
             updateEmptyState();
             
-            // If home dashboard is currently visible, refresh it to show stats or welcome message
             if (document.getElementById('homeDashboard').style.display === 'block') {
                 showHome();
             }
@@ -405,11 +367,9 @@ async function handleCreateTeam(e) {
             closeModal('createTeamModal');
             e.target.reset();
             
-            // Show team code modal
             document.getElementById('newTeamCode').textContent = data.team_code;
             openModal('teamCodeModal');
             
-            // Add team to local state and reload
             teams.push(data);
             renderTeams();
             await openTeamDashboard(data);
@@ -446,13 +406,10 @@ async function handleJoinTeam(e) {
             closeModal('joinTeamModal');
             e.target.reset();
             
-            // Refresh teams list
             await loadUserTeams();
             
-            // If we joined a team, show success message
             alert('Successfully joined the team!');
             
-            // If we have the team data, open its dashboard
             if (data.team) {
                 await openTeamDashboard(data.team);
             }
@@ -502,7 +459,6 @@ async function handleInviteMember(e) {
     }
 }
 
-// Browse Teams Functions
 async function showBrowseTeams() {
     teamDashboard.style.display = 'none';
     emptyState.style.display = 'none';
@@ -542,7 +498,6 @@ function renderAllTeams() {
     }
     
     allTeams.forEach(team => {
-        // Check if user is already in this team
         const isMember = teams.some(t => t.id === team.id);
         
         const teamCard = document.createElement('div');
@@ -681,7 +636,6 @@ function filterAvailableTeams() {
     renderAvailableTeams(filtered);
 }
 
-// Request to Join Functions
 function openRequestJoinModal(team) {
     document.getElementById('requestTeamName').textContent = team.team_name;
     document.getElementById('requestTeamDescription').textContent = team.description || 'No description provided.';
@@ -689,7 +643,6 @@ function openRequestJoinModal(team) {
     document.getElementById('requestTeamMembers').textContent = team.member_count || 0;
     document.getElementById('requestTeamMaxMembers').textContent = team.max_members || '∞';
     
-    // Store team ID in form
     const form = document.getElementById('requestJoinForm');
     form.dataset.teamId = team.id;
     
@@ -732,24 +685,19 @@ async function handleRequestJoin(e) {
     }
 }
 
-// Team Dashboard Functions
 async function openTeamDashboard(team) {
     currentTeam = team;
     
-    // Hide other sections
     browseTeamsSection.style.display = 'none';
     emptyState.style.display = 'none';
     
-    // Update UI
     document.getElementById('teamName').textContent = team.team_name;
     document.getElementById('teamCode').textContent = team.team_code;
     document.getElementById('teamCreator').textContent = team.creator_name || 'Unknown';
     
-    // Show team dashboard
     teamDashboard.style.display = 'block';
     document.getElementById('homeDashboard').style.display = 'none';
     
-    // clear home nav and mark team item active
     clearActiveNav();
     document.querySelectorAll('.team-nav-item').forEach(item => item.classList.remove('active'));
     document.querySelectorAll('.team-nav-item').forEach(item => {
@@ -758,10 +706,8 @@ async function openTeamDashboard(team) {
         }
     });
     
-    // Load team data
     await loadTeamDashboard();
     document.getElementById('adminPanel').style.display = 'none';
-    // Show/hide delete/leave buttons depending on whether the current user is the creator
     const deleteBtn = document.getElementById('deleteTeamBtn');
     const leaveBtn = document.getElementById('leaveTeamBtn');
     if (currentUser && currentTeam && deleteBtn && leaveBtn) {
@@ -872,17 +818,49 @@ async function loadTeamTasks() {
     const status = document.getElementById('taskFilter').value;
     
     try {
-        const url = status === 'all' 
+        const tasksUrl = status === 'all' 
             ? `${API_BASE_URL}/api/teams/${currentTeam.id}/tasks`
             : `${API_BASE_URL}/api/teams/${currentTeam.id}/tasks?status=${status}`;
         
-        const response = await fetchWithAuth(url);
-        
-        if (response.ok) {
-            tasks = await response.json();
-            renderTasks();
-            updateTaskCount(tasks.length);
+        const tasksResponse = await fetchWithAuth(tasksUrl);
+        let tasksData = [];
+        if (tasksResponse.ok) {
+            tasksData = await tasksResponse.json();
         }
+        
+        const dashboardResponse = await fetchWithAuth(`${API_BASE_URL}/api/teams/${currentTeam.id}/dashboard`);
+        let joinRequests = [];
+        if (dashboardResponse.ok) {
+            const dashboardData = await dashboardResponse.json();
+            joinRequests = dashboardData.join_requests || [];
+        }
+        
+        const allItems = [];
+        
+        tasksData.forEach(task => {
+            allItems.push({
+                ...task,
+                type: 'task'
+            });
+        });
+        
+        joinRequests.forEach(request => {
+            allItems.push({
+                id: `join_${request.id}`,
+                title: `Join Request from ${request.full_name}`,
+                description: `${request.full_name} (${request.student_id}) wants to join the team`,
+                status: 'Pending',
+                priority: 'High',
+                assigned_name: 'Team Leader',
+                due_date: null,
+                type: 'join_request',
+                request_data: request
+            });
+        });
+        
+        tasks = allItems;
+        renderTasks();
+        updateTaskCount(tasks.filter(item => item.type === 'task').length);
     } catch (error) {
         console.error('Load tasks error:', error);
         tasks = [];
@@ -901,34 +879,57 @@ function renderTasks() {
     
     tasks.forEach(task => {
         const taskCard = document.createElement('div');
-        taskCard.className = `task-card ${task.status.toLowerCase().replace(' ', '-')}`;
-        taskCard.innerHTML = `
-            <div class="task-header">
-                <div>
-                    <div class="task-title">${task.title || 'Untitled Task'}</div>
-                    <p class="task-description">${task.description || 'No description provided'}</p>
-                </div>
-                <span class="task-priority ${task.priority?.toLowerCase() || 'medium'}">
-                    ${task.priority || 'Medium'}
-                </span>
-            </div>
-            <div class="task-meta">
-                <div class="task-assignee">
-                    <div class="assignee-avatar">
-                        ${task.assigned_name?.charAt(0) || '?'}
-                    </div>
-                    <span>${task.assigned_name || 'Unassigned'}</span>
-                </div>
-                <span>Due: ${formatDate(task.due_date)}</span>
-            </div>
-        `;
         
-        taskCard.addEventListener('click', () => openEditTaskModal(task));
+        if (task.type === 'join_request') {
+            taskCard.className = 'task-card join-request';
+            taskCard.innerHTML = `
+                <div class="task-header">
+                    <div>
+                        <div class="task-title">${task.title}</div>
+                        <p class="task-description">${task.description}</p>
+                    </div>
+                    <span class="task-priority high join-request-badge">
+                        Join Request
+                    </span>
+                </div>
+                <div class="task-meta">
+                    <div class="task-assignee">
+                        <div class="assignee-avatar">J</div>
+                        <span>Pending Review</span>
+                    </div>
+                    <span>Requested: ${formatDate(task.request_data.requested_at)}</span>
+                </div>
+            `;
+        } else {
+            taskCard.className = `task-card ${task.status.toLowerCase().replace(' ', '-')}`;
+            taskCard.innerHTML = `
+                <div class="task-header">
+                    <div>
+                        <div class="task-title">${task.title || 'Untitled Task'}</div>
+                        <p class="task-description">${task.description || 'No description provided'}</p>
+                    </div>
+                    <span class="task-priority ${task.priority?.toLowerCase() || 'medium'}">
+                        ${task.priority || 'Medium'}
+                    </span>
+                </div>
+                <div class="task-meta">
+                    <div class="task-assignee">
+                        <div class="assignee-avatar">
+                            ${task.assigned_name?.charAt(0) || '?'}
+                        </div>
+                        <span>${task.assigned_name || 'Unassigned'}</span>
+                    </div>
+                    <span>Due: ${formatDate(task.due_date)}</span>
+                </div>
+            `;
+            
+            taskCard.addEventListener('click', () => openEditTaskModal(task));
+        }
+        
         tasksList.appendChild(taskCard);
     });
 }
 
-// Task Functions
 async function loadAssignableUsers() {
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/api/users`);
@@ -1030,7 +1031,6 @@ async function openEditTaskModal(task) {
     document.getElementById('editTaskPriority').value = task.priority || 'Medium';
     document.getElementById('editTaskDueDate').value = task.due_date || '';
     
-    // Load users for assignee select
     try {
         const response = await fetchWithAuth(`${API_BASE_URL}/api/users`);
         if (response.ok) {
@@ -1117,9 +1117,7 @@ async function handleDeleteTask() {
     }
 }
 
-// UI Helper Functions
 function showDashboard() {
-    // Set user info in sidebar
     if (currentUser) {
         document.getElementById('userName').textContent = currentUser.full_name || 'User';
         document.getElementById('userEmail').textContent = currentUser.email || '';
@@ -1129,7 +1127,6 @@ function showDashboard() {
         }
     }
     
-    // Hide all panels first for clean state
     document.getElementById('teamDashboard').style.display = 'none';
     document.getElementById('homeDashboard').style.display = 'none';
     document.getElementById('browseTeamsSection').style.display = 'none';
@@ -1138,7 +1135,6 @@ function showDashboard() {
     
     authSection.style.display = 'none';
     dashboard.style.display = 'flex';
-    // make Home button active by default
     clearActiveNav();
     const homeBtn = document.getElementById('homeBtn');
     if (homeBtn) homeBtn.classList.add('active');
@@ -1150,7 +1146,6 @@ function showAuth() {
     authSection.style.display = 'block';
     dashboard.style.display = 'none';
     
-    // Clear forms
     loginForm.reset();
     registerForm.reset();
 }
@@ -1176,16 +1171,13 @@ function updateTaskCount(count) {
 function openModal(modalId) {
     document.getElementById(modalId).style.display = 'flex';
     
-    // If opening task modal, load team members for assignee select
     if (modalId === 'createTaskModal') {
         loadAssignableUsers();
-        // Set due date to 7 days from now
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + 7);
         document.getElementById('taskDueDate').valueAsDate = dueDate;
     }
     
-    // If opening browse teams modal
     if (modalId === 'browseTeamsModal') {
         loadAvailableTeams();
     }
@@ -1194,14 +1186,12 @@ function openModal(modalId) {
 function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
     
-    // Reset form
     const form = document.querySelector(`#${modalId} form`);
     if (form) {
         form.reset();
     }
 }
 
-// API Helper Function
 async function fetchWithAuth(url, options = {}) {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -1217,7 +1207,6 @@ async function fetchWithAuth(url, options = {}) {
         }
     });
     
-    // If token is invalid, logout
     if (response.status === 401) {
         localStorage.removeItem('token');
         showAuth();
@@ -1227,7 +1216,6 @@ async function fetchWithAuth(url, options = {}) {
     return response;
 }
 
-// Format Date
 function formatDate(dateString) {
     if (!dateString) return 'No due date';
     
@@ -1239,7 +1227,6 @@ function formatDate(dateString) {
     });
 }
 
-// Show/hide Home view (dashboard) - frontend
 function clearActiveNav() {
     document.querySelectorAll('.nav-btn, .team-nav-item').forEach(el => el.classList.remove('active'));
 }
@@ -1253,13 +1240,11 @@ function showHome() {
     browseTeamsSection.style.display = 'none';
     document.getElementById('adminPanel').style.display = 'none';
     
-    // Always show home dashboard
     teamDashboard.style.display = 'none';
     emptyState.style.display = 'none';
     document.getElementById('homeDashboard').style.display = 'block';
     
     if (!teams || teams.length === 0) {
-        // Show welcome message in home dashboard when no teams
         document.getElementById('homeStats').innerHTML = `
             <div class="welcome-message" style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
                 <i class="fas fa-users" style="font-size: 3rem; color: #666; margin-bottom: 1rem;"></i>
@@ -1280,12 +1265,10 @@ function showHome() {
         `;
         document.getElementById('homeRecentTasks').innerHTML = '';
     } else {
-        // Load normal home dashboard with stats
         loadHomeDashboard();
     }
 }
 
-// Leave team handler
 async function handleLeaveTeam() {
     if (!currentTeam) return alert('No team selected');
     if (!confirm('Are you sure you want to leave this team?')) return;
@@ -1295,7 +1278,6 @@ async function handleLeaveTeam() {
         });
         const data = await response.json();
         if (response.ok) {
-            // Remove team from local state and switch to home
             teams = teams.filter(t => t.id !== currentTeam.id);
             currentTeam = null;
             renderTeams();
@@ -1310,7 +1292,6 @@ async function handleLeaveTeam() {
     }
 }
 
-// Delete team handler
 async function handleDeleteTeam() {
     if (!currentTeam) return alert('No team selected');
     if (!confirm('Are you sure you want to delete this team? This cannot be undone.')) return;
@@ -1355,7 +1336,6 @@ async function loadHomeDashboard() {
                 <p>Total Tasks</p>
             </div>
         `;
-        // Load recent tasks
         try {
             const recentRes = await fetchWithAuth(`${API_BASE_URL}/api/user/tasks`);
             if (recentRes.ok) {
@@ -1377,7 +1357,6 @@ async function loadHomeDashboard() {
     }
 }
 
-// Admin functions & UI
 function showAdminIfNeeded() {
     const adminBtn = document.getElementById('adminBtn');
     if (!adminBtn) return;

@@ -595,3 +595,4 @@ function dateEquals () {
     t.equal(value.toUTCString(), new Date(timestamp).toUTCString())
   }
 }
+

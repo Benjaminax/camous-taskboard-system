@@ -790,6 +790,27 @@ body {
     background: var(--success-color);
 }
 
+/* Join request styling */
+.task-card.join-request {
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
+    border: 2px solid #4a90e2;
+    cursor: default;
+}
+
+.task-card.join-request:hover {
+    transform: none;
+    box-shadow: var(--shadow-sm);
+}
+
+.task-card.join-request::before {
+    background: #4a90e2;
+}
+
+.join-request-badge {
+    background: #4a90e2 !important;
+    color: white !important;
+}
+
 .task-header {
     display: flex;
     justify-content: space-between;
