@@ -154,7 +154,7 @@ async function handleLogin(e) {
     submitBtn.disabled = true;
     
     try {
-        const response = await fetch(`${API_BASE_URL}/login`, {
+        const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
@@ -226,7 +226,7 @@ async function handleRegister(e) {
     submitBtn.disabled = true;
     
     try {
-        const response = await fetch(`${API_BASE_URL}/register`, {
+        const response = await fetch(`${API_BASE_URL}/api/register`, {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json',
