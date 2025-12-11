@@ -41,8 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     id: payload.id,
                     email: payload.email,
                     student_id: payload.student_id,
-                    full_name: payload.full_name
-                    ,
+                    full_name: payload.full_name,
                     is_admin: payload.is_admin || false
                 };
                 showDashboard();
