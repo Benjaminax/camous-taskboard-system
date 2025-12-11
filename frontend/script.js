@@ -1,5 +1,5 @@
 // frontend/script.js
-const API_BASE_URL = 'https://your-render-backend-url.onrender.com/api';
+const API_BASE_URL = 'https://camous-taskboard-system.onrender.com/api';
 
 // DOM Elements
 const authSection = document.getElementById('authSection');
@@ -528,6 +528,11 @@ function getAuthHeaders() {
 async function fetchUserData(token) {
     try {
         // Decode token to get user info
+        if (!token) {
+            localStorage.removeItem('token');
+            showAuth();
+            return;
+        }
         const payload = JSON.parse(atob(token.split('.')[1]));
         currentUser = {
             id: payload.id,

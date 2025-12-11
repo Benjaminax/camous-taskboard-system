@@ -1,23 +1,19 @@
 /* frontend/style.css */
 :root {
-    --ivy-green: #17462A;
-    --ivy-gold: #C2B280;
-    --ivy-cream: #F8F6F0;
-    --ivy-dark: #222C2A;
-    --ivy-gray: #6C757D;
-    --ivy-light-gray: #E9ECEF;
-    --bg-color: var(--ivy-cream);
+    --primary-red: #CC3634;
+    --primary-gray: #575656;
+    --primary-light-gray: #B2B2B2;
+    --bg-color: #f5f5f5;
     --card-bg: #fff;
-    --text-dark: var(--ivy-dark);
-    --text-light: var(--ivy-gray);
-    --border-color: var(--ivy-light-gray);
-    --success-color: #198754;
-    --warning-color: #FFC107;
-    --info-color: #0D6EFD;
-    --accent-color: var(--ivy-gold);
-    --shadow-lg: 0 8px 32px rgba(23,70,42,0.12);
-    --shadow-md: 0 4px 16px rgba(23,70,42,0.10);
-    --shadow-sm: 0 2px 8px rgba(23,70,42,0.08);
+    --text-dark: #333333;
+    --text-light: #666666;
+    --border-color: #e0e0e0;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --shadow-lg: 0 8px 32px rgba(87,86,86,0.12);
+    --shadow-md: 0 4px 16px rgba(87,86,86,0.10);
+    --shadow-sm: 0 2px 8px rgba(87,86,86,0.08);
 }
 
 * {
@@ -27,7 +23,7 @@
 }
 
 body {
-    font-family: 'Merriweather', 'Georgia', serif;
+    font-family: 'Montserrat', 'Arial', sans-serif;
     background-color: var(--bg-color);
     color: var(--text-dark);
     line-height: 1.7;
@@ -36,8 +32,8 @@ body {
 
 /* Navigation */
 .navbar {
-    background: linear-gradient(90deg, var(--ivy-green) 80%, var(--accent-color) 100%);
-    color: var(--ivy-cream);
+    background-color: var(--primary-red);
+    color: white;
     padding: 1.5rem 0;
     box-shadow: var(--shadow-md);
 }
@@ -64,9 +60,9 @@ body {
 .logo h1 {
     font-size: 1.5rem;
     font-weight: 700;
-    font-family: 'Merriweather', 'Georgia', serif;
+    font-family: 'Montserrat', 'Arial', sans-serif;
     letter-spacing: 0.03em;
-    color: var(--ivy-gold);
+    color: var(--primary-red);
 }
 
 .nav-links {
@@ -75,7 +71,7 @@ body {
 }
 
 .nav-links a {
-    color: var(--ivy-cream);
+    color: white;
     text-decoration: none;
     padding: 0.5rem 1.2rem;
     border-radius: 6px;
@@ -84,8 +80,8 @@ body {
 }
 
 .nav-links a:hover {
-    background: var(--accent-color);
-    color: var(--ivy-dark);
+    background-color: var(--primary-gray);
+    color: white;
 }
 
 /* Container */
@@ -98,11 +94,11 @@ body {
 /* Auth Section */
 .auth-section {
     background-color: var(--card-bg);
-    border-radius: 16px;
-    padding: 2.5rem 2rem;
+    border-radius: 8px;
+    padding: 2rem;
     box-shadow: var(--shadow-lg);
-    max-width: 420px;
-    margin: 2.5rem auto;
+    max-width: 400px;
+    margin: 2rem auto;
     border: 1px solid var(--border-color);
 }
 
@@ -130,8 +126,8 @@ body {
 
 .auth-form h2 {
     margin-bottom: 1.5rem;
-    color: var(--ivy-green);
-    font-family: 'Merriweather', 'Georgia', serif;
+    color: var(--primary-gray);
+    font-family: 'Montserrat', 'Arial', sans-serif;
     font-weight: 700;
 }
 
@@ -145,8 +141,8 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(90deg, var(--ivy-green) 80%, var(--accent-color) 100%);
-    color: var(--ivy-cream);
+    background-color: var(--primary-red);
+    color: white;
     border: none;
     padding: 0.8rem 1.7rem;
     border-radius: 8px;
@@ -161,8 +157,8 @@ body {
 }
 
 .btn-primary:hover {
-    background: var(--accent-color);
-    color: var(--ivy-dark);
+    background-color: var(--primary-gray);
+    color: white;
     box-shadow: var(--shadow-md);
 }
 
@@ -246,17 +242,16 @@ body {
 
 .team-card {
     background-color: var(--card-bg);
-    border-radius: 16px;
-    padding: 1.7rem 1.5rem;
+    border-radius: 8px;
+    padding: 1.5rem;
     box-shadow: var(--shadow-md);
     cursor: pointer;
     transition: transform 0.3s, box-shadow 0.3s;
-    border-left: 6px solid var(--ivy-green);
-    border-bottom: 2px solid var(--accent-color);
+    border-left: 4px solid var(--primary-red);
 }
 
 .team-card:hover {
-    transform: translateY(-4px) scale(1.02);
+    transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
 }
 
@@ -280,18 +275,18 @@ body {
 
 .stat-card {
     background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 1.2rem;
+    border-radius: 8px;
+    padding: 1rem;
     text-align: center;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-color);
 }
 
 .stat-card h4 {
-    font-size: 2.2rem;
-    color: var(--ivy-green);
+    font-size: 2rem;
+    color: var(--primary-red);
     margin-bottom: 0.5rem;
-    font-family: 'Merriweather', 'Georgia', serif;
+    font-family: 'Montserrat', 'Arial', sans-serif;
 }
 
 .stat-card p {
@@ -309,27 +304,26 @@ body {
 
 .member-card {
     background-color: var(--card-bg);
-    border-radius: 12px;
-    padding: 1.1rem;
+    border-radius: 8px;
+    padding: 1rem;
     display: flex;
     align-items: center;
     gap: 1rem;
     box-shadow: var(--shadow-sm);
-    min-width: 220px;
+    min-width: 200px;
     border: 1px solid var(--border-color);
 }
 
 .member-avatar {
-    width: 48px;
-    height: 48px;
-    background-color: var(--ivy-green);
+    width: 40px;
+    height: 40px;
+    background-color: var(--primary-light-gray);
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--ivy-cream);
+    color: white;
     font-weight: bold;
-    font-size: 1.3rem;
 }
 
 /* Tasks Grid */
@@ -341,13 +335,12 @@ body {
 
 .task-card {
     background-color: var(--card-bg);
-    border-radius: 14px;
-    padding: 1.5rem 1.2rem;
+    border-radius: 8px;
+    padding: 1.5rem;
     box-shadow: var(--shadow-md);
     cursor: pointer;
-    transition: transform 0.3s, box-shadow 0.3s;
-    border-left: 6px solid var(--ivy-green);
-    border-bottom: 2px solid var(--accent-color);
+    transition: transform 0.3s;
+    border-left: 4px solid;
 }
 
 .task-card:hover {
@@ -375,10 +368,10 @@ body {
 }
 
 .task-title {
-    font-weight: 700;
+    font-weight: 600;
     margin-bottom: 0.5rem;
-    font-family: 'Merriweather', 'Georgia', serif;
-    color: var(--ivy-green);
+    font-family: 'Montserrat', 'Arial', sans-serif;
+    color: var(--primary-gray);
 }
 
 .task-priority {
