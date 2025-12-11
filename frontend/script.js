@@ -1,7 +1,47 @@
-// frontend/script.js
+// Camous Taskboard System - Main Application Script
 const API_BASE_URL = 'https://camous-taskboard-system.onrender.com/api';
 
-// Helper function for API calls with retry logic
+// DOM Elements
+let authSection, dashboard, sidebar, teamsList, teamDashboard, taskFilter;
+
+// Application State
+let currentUser = null;
+let currentTeam = null;
+let teams = [];
+let tasks = [];
+
+// Initialize DOM References
+function initializeDOMElements() {
+    authSection = document.getElementById('authSection');
+    dashboard = document.getElementById('dashboard');
+    sidebar = document.getElementById('sidebar');
+    teamsList = document.getElementById('teamsList');
+    teamDashboard = document.getElementById('teamDashboard');
+    taskFilter = document.getElementById('taskFilter');
+}
+
+// Analytics Functions
+function initializeAnalytics() {
+    if (typeof mixpanel !== 'undefined') {
+        const token = localStorage.getItem('MIXPANEL_TOKEN') || 'MIXPANEL_TOKEN_PLACEHOLDER';
+        if (token !== 'MIXPANEL_TOKEN_PLACEHOLDER' && !window.mixpanelInitialized) {
+            mixpanel.init(token, { debug: true });
+            window.mixpanelInitialized = true;
+        }
+    }
+}
+
+function trackAnalytics(eventName, properties = {}) {
+    if (typeof mixpanel !== 'undefined' && window.mixpanelInitialized) {
+        mixpanel.track(eventName, {
+            ...properties,
+            timestamp: new Date().toISOString(),
+            user_id: currentUser?.id
+        });
+    }
+}
+
+// API Helper with Retry Logic
 async function apiCall(endpoint, options = {}) {
     const maxRetries = 3;
     let lastError;
@@ -17,154 +57,147 @@ async function apiCall(endpoint, options = {}) {
             });
             
             if (!response.ok && response.status === 0) {
-                throw new Error('Network error - possible HTTP/2 issue');
+                throw new Error('Network error');
             }
             
             return response;
         } catch (error) {
             lastError = error;
             if (attempt < maxRetries) {
-                console.warn(`API call attempt ${attempt} failed, retrying...`);
+                console.warn(`API attempt ${attempt} failed, retrying...`);
                 await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
             }
         }
     }
-    
     throw lastError;
 }
 
-// DOM Elements
-const authSection = document.getElementById('authSection');
-const dashboard = document.getElementById('dashboard');
-const teamsList = document.getElementById('teamsList');
-const teamDashboard = document.getElementById('teamDashboard');
-const taskFilter = document.getElementById('taskFilter');
-
-// State
-let currentUser = null;
-let currentTeam = null;
-let teams = [];
-let tasks = [];
-
-// Initialize Analytics
-function initializeAnalytics() {
-    // Check if Mixpanel is available
-    if (typeof mixpanel !== 'undefined') {
-        // Set a project token - can be configured via environment variable or localStorage
-        const token = localStorage.getItem('MIXPANEL_TOKEN') || 'MIXPANEL_TOKEN_PLACEHOLDER';
-        if (token !== 'MIXPANEL_TOKEN_PLACEHOLDER' && !window.mixpanelInitialized) {
-            mixpanel.init(token, { debug: true });
-            window.mixpanelInitialized = true;
-        }
-    }
-}
-
-// Track analytics event
-function trackAnalytics(eventName, properties = {}) {
-    if (typeof mixpanel !== 'undefined' && window.mixpanelInitialized) {
-        mixpanel.track(eventName, {
-            ...properties,
-            timestamp: new Date().toISOString(),
-            user_id: currentUser?.id
-        });
-    }
-}
-
-// Initialize
+// Page Initialization
 document.addEventListener('DOMContentLoaded', () => {
-    // Clear any existing user state
-    currentUser = null;
-    currentTeam = null;
-    teams = [];
-    tasks = [];
-    
-    // Force hide all sections first with !important style
-    const authSection = document.getElementById('authSection');
-    const dashboard = document.getElementById('dashboard');
-    const teamDashboard = document.getElementById('teamDashboard');
-    const sidebar = document.getElementById('sidebar');
-    
-    // Reset display states forcefully
-    if (authSection) {
-        authSection.style.cssText = 'display: block !important;';
-    }
-    if (dashboard) {
-        dashboard.style.cssText = 'display: none !important;';
-    }
-    if (teamDashboard) {
-        teamDashboard.style.cssText = 'display: none !important;';
-    }
-    if (sidebar) {
-        sidebar.style.cssText = 'display: none !important;';
-    }
-    
-    // Clear all user display info
-    const userNameElement = document.getElementById('userName');
-    const dashboardTitle = document.getElementById('dashboardTitle');
-    if (userNameElement) userNameElement.textContent = '';
-    if (dashboardTitle) dashboardTitle.innerHTML = 'Welcome, <span id="userName"></span>';
-    
-    // Clear sidebar user info
-    const sidebarUserName = document.getElementById('sidebarUserName');
-    const sidebarUserEmail = document.getElementById('sidebarUserEmail');
-    const userInitial = document.getElementById('userInitial');
-    if (sidebarUserName) sidebarUserName.textContent = 'User';
-    if (sidebarUserEmail) sidebarUserEmail.textContent = 'user@email.com';
-    if (userInitial) userInitial.textContent = 'U';
-    
-    initializeAnalytics();
-    setupEventListeners();
-    setupSidebarListeners();
-    
-    // IMPORTANT: Always start with auth screen unless token is valid
-    const token = localStorage.getItem('token');
-    let showDashboard = false;
-    
-    if (token && token.trim().length > 0) {
-        try {
-            // Validate token by decoding it
-            const parts = token.split('.');
-            if (parts.length === 3) {
-                const payload = JSON.parse(atob(parts[1]));
-                // Check if token is expired (basic check)
-                if (payload.exp && payload.exp * 1000 < Date.now()) {
-                    // Token is expired
-                    console.log('Token expired');
-                    localStorage.removeItem('token');
-                    showDashboard = false;
-                } else if (payload.id && payload.email) {
-                    // Token looks valid
-                    console.log('Valid token found');
-                    showDashboard = true;
-                    fetchUserData(token);
-                } else {
-                    console.log('Token missing required fields');
-                    localStorage.removeItem('token');
-                    showDashboard = false;
+    try {
+        initializeDOMElements();
+        
+        // Clear all state on page load
+        currentUser = null;
+        currentTeam = null;
+        teams = [];
+        tasks = [];
+        
+        // Force reset all display elements
+        if (authSection) authSection.style.cssText = 'display: block !important;';
+        if (dashboard) dashboard.style.cssText = 'display: none !important;';
+        if (sidebar) sidebar.style.cssText = 'display: none !important;';
+        
+        const teamDash = document.getElementById('teamDashboard');
+        if (teamDash) teamDash.style.cssText = 'display: none !important;';
+        
+        // Clear user display elements
+        const userName = document.getElementById('userName');
+        if (userName) userName.textContent = '';
+        
+        const sidebarUserName = document.getElementById('sidebarUserName');
+        const sidebarUserEmail = document.getElementById('sidebarUserEmail');
+        const userInitial = document.getElementById('userInitial');
+        
+        if (sidebarUserName) sidebarUserName.textContent = 'User';
+        if (sidebarUserEmail) sidebarUserEmail.textContent = 'user@email.com';
+        if (userInitial) userInitial.textContent = 'U';
+        
+        initializeAnalytics();
+        setupEventListeners();
+        setupSidebarListeners();
+        
+        // Check for valid token
+        const token = localStorage.getItem('token');
+        let isValidToken = false;
+        
+        if (token && token.trim()) {
+            try {
+                const parts = token.split('.');
+                if (parts.length === 3) {
+                    const payload = JSON.parse(atob(parts[1]));
+                    
+                    // Check expiration
+                    if (payload.exp && payload.exp * 1000 < Date.now()) {
+                        console.log('Token expired');
+                        localStorage.removeItem('token');
+                    } else if (payload.id && payload.email) {
+                        console.log('Valid token found');
+                        isValidToken = true;
+                        fetchUserData(token);
+                    }
                 }
-            } else {
-                console.log('Invalid token format');
+            } catch (error) {
+                console.error('Token validation error:', error);
                 localStorage.removeItem('token');
-                showDashboard = false;
             }
-        } catch (error) {
-            // Token is invalid, clear it and show auth
-            console.error('Token validation error:', error);
-            localStorage.removeItem('token');
-            showDashboard = false;
         }
-    } else {
-        console.log('No token found');
-        showDashboard = false;
-    }
-    
-    // If no valid token, ensure auth is shown
-    if (!showDashboard) {
-        showAuth();
+        
+        // If no valid token, show auth
+        if (!isValidToken) {
+            showAuth();
+        }
+    } catch (error) {
+        console.error('Initialization error:', error);
     }
 });
 
-// Setup Sidebar Listeners
+// Event Listeners Setup
+function setupEventListeners() {
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn?.addEventListener('click', () => switchTab(btn.dataset.tab));
+    });
+    
+    // Nav buttons
+    document.getElementById('loginBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchTab('login');
+    });
+    
+    document.getElementById('registerBtn')?.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchTab('register');
+    });
+    
+    // Forms
+    document.getElementById('loginFormElement')?.addEventListener('submit', handleLogin);
+    document.getElementById('registerFormElement')?.addEventListener('submit', handleRegister);
+    document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
+    
+    // Team buttons
+    document.getElementById('createTeamBtn')?.addEventListener('click', () => openModal('createTeamModal'));
+    document.getElementById('joinTeamBtn')?.addEventListener('click', () => openModal('joinTeamModal'));
+    
+    // Task button
+    document.getElementById('createTaskBtn')?.addEventListener('click', () => openModal('createTaskModal'));
+    
+    // Task filter
+    taskFilter?.addEventListener('change', loadTeamTasks);
+    
+    // Modal forms
+    document.getElementById('createTeamForm')?.addEventListener('submit', handleCreateTeam);
+    document.getElementById('joinTeamForm')?.addEventListener('submit', handleJoinTeam);
+    document.getElementById('createTaskForm')?.addEventListener('submit', handleCreateTask);
+    document.getElementById('editTaskForm')?.addEventListener('submit', handleUpdateTask);
+    document.getElementById('deleteTaskBtn')?.addEventListener('click', handleDeleteTask);
+    
+    // Close modals
+    document.querySelectorAll('.modal .close').forEach(btn => {
+        btn?.addEventListener('click', () => {
+            btn.closest('.modal').style.display = 'none';
+        });
+    });
+    
+    // Click outside modal to close
+    window.addEventListener('click', (e) => {
+        if (e.target.classList.contains('modal')) {
+            e.target.style.display = 'none';
+        }
+    });
+}
+
+// Sidebar Setup
 function setupSidebarListeners() {
     const hamburger = document.getElementById('hamburger');
     const sidebar = document.getElementById('sidebar');
@@ -172,32 +205,20 @@ function setupSidebarListeners() {
     const sidebarOverlay = document.getElementById('sidebarOverlay');
     const mainContent = document.querySelector('.main-content');
     
-    // Toggle sidebar
     hamburger?.addEventListener('click', (e) => {
         e.stopPropagation();
-        const isOpen = sidebar.classList.toggle('open');
-        hamburger.classList.toggle('active');
-        sidebarOverlay.classList.toggle('active');
-        if (mainContent) mainContent.classList.toggle('sidebar-open');
+        toggleSidebar(true, sidebar, hamburger, sidebarOverlay, mainContent);
     });
     
-    // Close sidebar
     closeSidebar?.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-        hamburger.classList.remove('active');
-        sidebarOverlay.classList.remove('active');
-        if (mainContent) mainContent.classList.remove('sidebar-open');
+        toggleSidebar(false, sidebar, hamburger, sidebarOverlay, mainContent);
     });
     
-    // Close sidebar when overlay clicked
     sidebarOverlay?.addEventListener('click', () => {
-        sidebar.classList.remove('open');
-        hamburger.classList.remove('active');
-        sidebarOverlay.classList.remove('active');
-        if (mainContent) mainContent.classList.remove('sidebar-open');
+        toggleSidebar(false, sidebar, hamburger, sidebarOverlay, mainContent);
     });
     
-    // Sidebar buttons
+    // Sidebar actions
     document.getElementById('sidebarCreateTeam')?.addEventListener('click', (e) => {
         e.preventDefault();
         closeSidebarPanel();
@@ -221,103 +242,41 @@ function setupSidebarListeners() {
         closeSidebarPanel();
         handleLogout();
     });
-    
-    // Sidebar menu toggle button
-    document.getElementById('sidebarToggle')?.addEventListener('click', () => {
-        hamburger?.click();
-    });
-    
-    // Sidebar nav items
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.preventDefault();
-            const section = item.dataset.section;
-            closeSidebarPanel();
-            // Could add section switching here if needed
-        });
-    });
+}
+
+function toggleSidebar(open, sidebar, hamburger, overlay, mainContent) {
+    if (open) {
+        sidebar?.classList.add('open');
+        hamburger?.classList.add('active');
+        overlay?.classList.add('active');
+        mainContent?.classList.add('sidebar-open');
+    } else {
+        sidebar?.classList.remove('open');
+        hamburger?.classList.remove('active');
+        overlay?.classList.remove('active');
+        mainContent?.classList.remove('sidebar-open');
+    }
 }
 
 function closeSidebarPanel() {
     const sidebar = document.getElementById('sidebar');
     const hamburger = document.getElementById('hamburger');
-    const sidebarOverlay = document.getElementById('sidebarOverlay');
+    const overlay = document.getElementById('sidebarOverlay');
     const mainContent = document.querySelector('.main-content');
-    
-    sidebar.classList.remove('open');
-    hamburger.classList.remove('active');
-    sidebarOverlay.classList.remove('active');
-    if (mainContent) mainContent.classList.remove('sidebar-open');
+    toggleSidebar(false, sidebar, hamburger, overlay, mainContent);
 }
 
-// Setup Event Listeners
-function setupEventListeners() {
-    // Auth tabs
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const tab = btn.dataset.tab;
-            switchTab(tab);
-        });
-    });
-    
-    // Nav buttons for login/register
-    document.getElementById('loginBtn')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        switchTab('login');
-    });
-    
-    document.getElementById('registerBtn')?.addEventListener('click', (e) => {
-        e.preventDefault();
-        switchTab('register');
-    });
-    
-    // Login form
-    document.getElementById('loginFormElement').addEventListener('submit', handleLogin);
-    
-    // Register form
-    document.getElementById('registerFormElement').addEventListener('submit', handleRegister);
-    
-    // Logout - use optional chaining to handle missing element
-    document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
-    
-    // Team actions
-    document.getElementById('createTeamBtn')?.addEventListener('click', () => openModal('createTeamModal'));
-    document.getElementById('joinTeamBtn')?.addEventListener('click', () => openModal('joinTeamModal'));
-    
-    // Task actions
-    document.getElementById('createTaskBtn')?.addEventListener('click', () => openModal('createTaskModal'));
-    
-    // Task filter
-    taskFilter?.addEventListener('change', loadTeamTasks);
-    
-    // Modal forms
-    document.getElementById('createTeamForm').addEventListener('submit', handleCreateTeam);
-    document.getElementById('joinTeamForm').addEventListener('submit', handleJoinTeam);
-    document.getElementById('createTaskForm').addEventListener('submit', handleCreateTask);
-    document.getElementById('editTaskForm').addEventListener('submit', handleUpdateTask);
-    document.getElementById('deleteTaskBtn').addEventListener('click', handleDeleteTask);
-    
-    // Close modals
-    document.querySelectorAll('.modal .close').forEach(closeBtn => {
-        closeBtn.addEventListener('click', () => {
-            closeBtn.closest('.modal').style.display = 'none';
-        });
-    });
-    
-    // Close modals on outside click
-    window.addEventListener('click', (event) => {
-        if (event.target.classList.contains('modal')) {
-            event.target.style.display = 'none';
-        }
-    });
-}
-
-// Auth Functions
+// Authentication Functions
 async function handleLogin(e) {
     e.preventDefault();
     
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+    const email = document.getElementById('loginEmail')?.value;
+    const password = document.getElementById('loginPassword')?.value;
+    
+    if (!email || !password) {
+        alert('Please enter email and password');
+        return;
+    }
     
     try {
         const response = await apiCall('/login', {
@@ -327,23 +286,21 @@ async function handleLogin(e) {
         
         const data = await response.json();
         
-        if (response.ok) {
+        if (response.ok && data.token) {
             localStorage.setItem('token', data.token);
             currentUser = data.user;
             
-            // Track login event with Mixpanel
             trackAnalytics('User Login', {
                 email: email,
-                student_id: data.user.student_id
+                student_id: data.user?.student_id
             });
             
-            // Set user properties for Mixpanel
             if (typeof mixpanel !== 'undefined' && window.mixpanelInitialized) {
-                mixpanel.identify(data.user.id);
+                mixpanel.identify(data.user?.id);
                 mixpanel.people.set({
-                    "$name": data.user.full_name,
-                    "$email": data.user.email,
-                    "student_id": data.user.student_id
+                    "$name": data.user?.full_name,
+                    "$email": data.user?.email,
+                    "student_id": data.user?.student_id
                 });
             }
             
@@ -351,12 +308,11 @@ async function handleLogin(e) {
             loadUserTeams();
         } else {
             alert(data.error || 'Login failed');
-            // Track failed login
-            trackAnalytics('Login Failed', { email: email });
+            trackAnalytics('Login Failed', { email });
         }
     } catch (error) {
         console.error('Login error:', error);
-        alert('Network error. Please check your connection and try again.');
+        alert('Network error. Please try again.');
         trackAnalytics('Login Error', { error: error.message });
     }
 }
@@ -364,10 +320,15 @@ async function handleLogin(e) {
 async function handleRegister(e) {
     e.preventDefault();
     
-    const studentId = document.getElementById('regStudentId').value;
-    const fullName = document.getElementById('regFullName').value;
-    const email = document.getElementById('regEmail').value;
-    const password = document.getElementById('regPassword').value;
+    const studentId = document.getElementById('regStudentId')?.value;
+    const fullName = document.getElementById('regFullName')?.value;
+    const email = document.getElementById('regEmail')?.value;
+    const password = document.getElementById('regPassword')?.value;
+    
+    if (!studentId || !fullName || !email || !password) {
+        alert('Please fill all fields');
+        return;
+    }
     
     if (password.length < 6) {
         alert('Password must be at least 6 characters');
@@ -383,37 +344,28 @@ async function handleRegister(e) {
         const data = await response.json();
         
         if (response.ok) {
-            // Track registration event
-            trackAnalytics('User Registration', {
-                email: email,
-                student_id: studentId,
-                full_name: fullName
-            });
-            
+            trackAnalytics('User Registration', { email, student_id: studentId, full_name: fullName });
             alert('Registration successful! Please login.');
             switchTab('login');
             e.target.reset();
         } else {
             alert(data.error || 'Registration failed');
-            trackAnalytics('Registration Failed', { email: email });
+            trackAnalytics('Registration Failed', { email });
         }
     } catch (error) {
         console.error('Register error:', error);
-        alert('Network error. Please check your connection and try again.');
+        alert('Network error. Please try again.');
         trackAnalytics('Registration Error', { error: error.message });
     }
 }
 
 function handleLogout() {
-    // Track logout event
-    trackAnalytics('User Logout', {
-        user_id: currentUser?.id,
-        email: currentUser?.email
-    });
-    
+    trackAnalytics('User Logout', { user_id: currentUser?.id, email: currentUser?.email });
     localStorage.removeItem('token');
     currentUser = null;
     currentTeam = null;
+    teams = [];
+    tasks = [];
     showAuth();
 }
 
@@ -425,9 +377,8 @@ async function loadUserTeams() {
         });
         
         const data = await response.json();
-        
         if (response.ok) {
-            teams = data;
+            teams = data || [];
             renderTeams();
         }
     } catch (error) {
@@ -436,31 +387,31 @@ async function loadUserTeams() {
 }
 
 function renderTeams() {
+    if (!teamsList) return;
     teamsList.innerHTML = '';
     
     if (teams.length === 0) {
-        teamsList.innerHTML = '<p class="no-teams">No teams yet. Create or join a team to get started!</p>';
+        teamsList.innerHTML = '<p class="no-teams">No teams yet. Create or join a team!</p>';
         return;
     }
     
     teams.forEach(team => {
-        const teamCard = document.createElement('div');
-        teamCard.className = 'team-card';
-        teamCard.innerHTML = `
-            <h4>${team.team_name}</h4>
-            <p><strong>Code:</strong> ${team.team_code}</p>
-            <p><small>Click to view team dashboard</small></p>
-        `;
-        
-        teamCard.addEventListener('click', () => openTeamDashboard(team));
-        teamsList.appendChild(teamCard);
+        const card = document.createElement('div');
+        card.className = 'team-card';
+        card.innerHTML = `<h4>${team.team_name}</h4><p><strong>Code:</strong> ${team.team_code}</p>`;
+        card.addEventListener('click', () => openTeamDashboard(team));
+        teamsList.appendChild(card);
     });
 }
 
 async function handleCreateTeam(e) {
     e.preventDefault();
     
-    const teamName = document.getElementById('teamNameInput').value;
+    const teamName = document.getElementById('teamNameInput')?.value;
+    if (!teamName) {
+        alert('Please enter team name');
+        return;
+    }
     
     try {
         const response = await fetch(`${API_BASE_URL}/teams`, {
@@ -472,32 +423,29 @@ async function handleCreateTeam(e) {
         const data = await response.json();
         
         if (response.ok) {
-            // Track team creation
-            trackAnalytics('Team Created', {
-                team_name: teamName,
-                team_id: data.id
-            });
-            
+            trackAnalytics('Team Created', { team_name: teamName, team_id: data.id });
             closeModal('createTeamModal');
             e.target.reset();
             teams.push(data);
             renderTeams();
-            alert('Team created successfully!');
+            alert('Team created!');
         } else {
             alert(data.error || 'Failed to create team');
-            trackAnalytics('Team Creation Failed', { team_name: teamName });
         }
     } catch (error) {
         console.error('Create team error:', error);
-        alert('Network error. Please try again.');
-        trackAnalytics('Team Creation Error', { error: error.message });
+        alert('Network error');
     }
 }
 
 async function handleJoinTeam(e) {
     e.preventDefault();
     
-    const teamCode = document.getElementById('teamCodeInput').value;
+    const teamCode = document.getElementById('teamCodeInput')?.value;
+    if (!teamCode) {
+        alert('Please enter team code');
+        return;
+    }
     
     try {
         const response = await fetch(`${API_BASE_URL}/teams/join`, {
@@ -512,24 +460,27 @@ async function handleJoinTeam(e) {
             closeModal('joinTeamModal');
             e.target.reset();
             await loadUserTeams();
-            alert('Joined team successfully!');
+            alert('Joined team!');
         } else {
             alert(data.error || 'Failed to join team');
         }
     } catch (error) {
         console.error('Join team error:', error);
-        alert('Network error. Please try again.');
+        alert('Network error');
     }
 }
 
-// Team Dashboard Functions
+// Team Dashboard
 async function openTeamDashboard(team) {
     currentTeam = team;
-    document.getElementById('teamName').textContent = team.team_name;
-    teamDashboard.style.display = 'block';
+    const teamNameEl = document.getElementById('teamName');
+    if (teamNameEl) teamNameEl.textContent = team.team_name;
     
-    // Scroll to team dashboard
-    teamDashboard.scrollIntoView({ behavior: 'smooth' });
+    const td = document.getElementById('teamDashboard');
+    if (td) {
+        td.style.display = 'block';
+        td.scrollIntoView({ behavior: 'smooth' });
+    }
     
     await loadTeamDashboard();
 }
@@ -549,7 +500,6 @@ async function loadTeamStats() {
         });
         
         const data = await response.json();
-        
         if (response.ok) {
             renderTeamStats(data.summary);
             renderTeamMembers(data.members);
@@ -560,24 +510,14 @@ async function loadTeamStats() {
 }
 
 function renderTeamStats(stats) {
-    const statsGrid = document.getElementById('teamStats');
-    statsGrid.innerHTML = `
-        <div class="stat-card">
-            <h4>${stats.total_tasks || 0}</h4>
-            <p>Total Tasks</p>
-        </div>
-        <div class="stat-card">
-            <h4>${stats.completed_tasks || 0}</h4>
-            <p>Completed</p>
-        </div>
-        <div class="stat-card">
-            <h4>${stats.in_progress_tasks || 0}</h4>
-            <p>In Progress</p>
-        </div>
-        <div class="stat-card">
-            <h4>${stats.pending_tasks || 0}</h4>
-            <p>Pending</p>
-        </div>
+    const grid = document.getElementById('teamStats');
+    if (!grid) return;
+    
+    grid.innerHTML = `
+        <div class="stat-card"><h4>${stats?.total_tasks || 0}</h4><p>Total Tasks</p></div>
+        <div class="stat-card"><h4>${stats?.completed_tasks || 0}</h4><p>Completed</p></div>
+        <div class="stat-card"><h4>${stats?.in_progress_tasks || 0}</h4><p>In Progress</p></div>
+        <div class="stat-card"><h4>${stats?.pending_tasks || 0}</h4><p>Pending</p></div>
     `;
 }
 
@@ -588,7 +528,6 @@ async function loadTeamMembers() {
         });
         
         const data = await response.json();
-        
         if (response.ok) {
             populateAssigneeSelect(data);
         }
@@ -598,28 +537,23 @@ async function loadTeamMembers() {
 }
 
 function renderTeamMembers(members) {
-    const membersList = document.getElementById('teamMembers');
-    membersList.innerHTML = '';
+    const list = document.getElementById('teamMembers');
+    if (!list) return;
+    list.innerHTML = '';
     
-    members.forEach(member => {
-        const memberCard = document.createElement('div');
-        memberCard.className = 'member-card';
-        memberCard.innerHTML = `
-            <div class="member-avatar">
-                ${member.full_name.charAt(0)}
-            </div>
-            <div>
-                <strong>${member.full_name}</strong>
-                <p>${member.student_id}</p>
-                <p><small>Tasks: ${member.task_count || 0}</small></p>
-            </div>
+    (members || []).forEach(member => {
+        const card = document.createElement('div');
+        card.className = 'member-card';
+        card.innerHTML = `
+            <div class="member-avatar">${member.full_name?.charAt(0) || 'U'}</div>
+            <div><strong>${member.full_name}</strong><p>${member.student_id}</p></div>
         `;
-        membersList.appendChild(memberCard);
+        list.appendChild(card);
     });
 }
 
 async function loadTeamTasks() {
-    const status = taskFilter.value;
+    const status = taskFilter?.value || '';
     
     try {
         const response = await fetch(`${API_BASE_URL}/teams/${currentTeam.id}/tasks?status=${status}`, {
@@ -627,9 +561,8 @@ async function loadTeamTasks() {
         });
         
         const data = await response.json();
-        
         if (response.ok) {
-            tasks = data;
+            tasks = data || [];
             renderTasks();
         }
     } catch (error) {
@@ -638,33 +571,33 @@ async function loadTeamTasks() {
 }
 
 function renderTasks() {
-    const tasksList = document.getElementById('tasksList');
-    tasksList.innerHTML = '';
+    const list = document.getElementById('tasksList');
+    if (!list) return;
+    list.innerHTML = '';
     
     if (tasks.length === 0) {
-        tasksList.innerHTML = '<p class="no-tasks">No tasks found. Create your first task!</p>';
+        list.innerHTML = '<p class="no-tasks">No tasks found</p>';
         return;
     }
     
     tasks.forEach(task => {
-        const taskCard = document.createElement('div');
-        taskCard.className = `task-card ${task.status.toLowerCase().replace(' ', '-')}`;
-        taskCard.innerHTML = `
+        const card = document.createElement('div');
+        card.className = `task-card ${task.status?.toLowerCase().replace(' ', '-') || ''}`;
+        card.innerHTML = `
             <div class="task-header">
                 <div>
                     <div class="task-title">${task.title}</div>
                     <p class="task-description">${task.description || 'No description'}</p>
                 </div>
-                <span class="task-priority ${task.priority.toLowerCase()}">${task.priority}</span>
+                <span class="task-priority ${task.priority?.toLowerCase() || ''}">${task.priority || 'Medium'}</span>
             </div>
             <div class="task-meta">
-                <span>Assigned to: ${task.assigned_name || 'Unassigned'}</span>
+                <span>Assigned: ${task.assigned_name || 'Unassigned'}</span>
                 <span>Due: ${formatDate(task.due_date)}</span>
             </div>
         `;
-        
-        taskCard.addEventListener('click', () => openEditTaskModal(task));
-        tasksList.appendChild(taskCard);
+        card.addEventListener('click', () => openEditTaskModal(task));
+        list.appendChild(card);
     });
 }
 
@@ -672,51 +605,41 @@ function renderTasks() {
 async function handleCreateTask(e) {
     e.preventDefault();
     
-    const title = document.getElementById('taskTitle').value;
-    const description = document.getElementById('taskDescription').value;
-    const priority = document.getElementById('taskPriority').value;
-    const assigned_to = document.getElementById('taskAssignee').value;
-    const due_date = document.getElementById('taskDueDate').value;
+    const title = document.getElementById('taskTitle')?.value;
+    const description = document.getElementById('taskDescription')?.value;
+    const priority = document.getElementById('taskPriority')?.value;
+    const assigned_to = document.getElementById('taskAssignee')?.value;
+    const due_date = document.getElementById('taskDueDate')?.value;
+    
+    if (!title) {
+        alert('Please enter task title');
+        return;
+    }
     
     try {
         const response = await fetch(`${API_BASE_URL}/tasks`, {
             method: 'POST',
             headers: getAuthHeaders(),
             body: JSON.stringify({
-                title,
-                description,
-                priority,
-                assigned_to,
-                team_id: currentTeam.id,
-                due_date
+                title, description, priority, assigned_to,
+                team_id: currentTeam.id, due_date
             })
         });
         
         const data = await response.json();
         
         if (response.ok) {
-            // Track task creation
-            trackAnalytics('Task Created', {
-                task_title: title,
-                task_id: data.id,
-                team_id: currentTeam.id,
-                priority: priority,
-                status: data.status
-            });
-            
+            trackAnalytics('Task Created', { task_title: title, team_id: currentTeam.id });
             closeModal('createTaskModal');
             e.target.reset();
             await loadTeamTasks();
-            await loadTeamStats();
-            alert('Task created successfully!');
+            alert('Task created!');
         } else {
             alert(data.error || 'Failed to create task');
-            trackAnalytics('Task Creation Failed', { task_title: title });
         }
     } catch (error) {
         console.error('Create task error:', error);
-        alert('Network error. Please try again.');
-        trackAnalytics('Task Creation Error', { error: error.message });
+        alert('Network error');
     }
 }
 
@@ -727,7 +650,6 @@ function openEditTaskModal(task) {
     document.getElementById('editTaskStatus').value = task.status;
     document.getElementById('editTaskPriority').value = task.priority;
     document.getElementById('editTaskDueDate').value = task.due_date;
-    
     populateEditAssigneeSelect(task.assigned_to);
     openModal('editTaskModal');
 }
@@ -747,46 +669,29 @@ async function handleUpdateTask(e) {
         const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
             method: 'PUT',
             headers: getAuthHeaders(),
-            body: JSON.stringify({
-                title,
-                description,
-                status,
-                priority,
-                assigned_to,
-                due_date
-            })
+            body: JSON.stringify({ title, description, status, priority, assigned_to, due_date })
         });
         
         const data = await response.json();
         
         if (response.ok) {
-            // Track task update
-            trackAnalytics('Task Updated', {
-                task_title: title,
-                task_id: taskId,
-                status: status,
-                priority: priority
-            });
-            
+            trackAnalytics('Task Updated', { task_title: title, status });
             closeModal('editTaskModal');
             await loadTeamTasks();
-            await loadTeamStats();
-            alert('Task updated successfully!');
+            alert('Task updated!');
         } else {
             alert(data.error || 'Failed to update task');
         }
     } catch (error) {
         console.error('Update task error:', error);
-        alert('Network error. Please try again.');
+        alert('Network error');
     }
 }
 
 async function handleDeleteTask() {
     const taskId = document.getElementById('editTaskId').value;
     
-    if (!confirm('Are you sure you want to delete this task?')) {
-        return;
-    }
+    if (!confirm('Delete this task?')) return;
     
     try {
         const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
@@ -797,106 +702,99 @@ async function handleDeleteTask() {
         const data = await response.json();
         
         if (response.ok) {
-            // Track task deletion
-            trackAnalytics('Task Deleted', {
-                task_id: taskId
-            });
-            
+            trackAnalytics('Task Deleted', { task_id: taskId });
             closeModal('editTaskModal');
             await loadTeamTasks();
-            await loadTeamStats();
-            alert('Task deleted successfully!');
+            alert('Task deleted!');
         } else {
             alert(data.error || 'Failed to delete task');
         }
     } catch (error) {
         console.error('Delete task error:', error);
-        alert('Network error. Please try again.');
+        alert('Network error');
     }
 }
 
 // Helper Functions
 function getAuthHeaders() {
-    const token = localStorage.getItem('token');
     return {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
     };
 }
 
 async function fetchUserData(token) {
     try {
-        // Decode token to get user info
         if (!token) {
             localStorage.removeItem('token');
-            currentUser = null;
             showAuth();
             return;
         }
         
         const payload = JSON.parse(atob(token.split('.')[1]));
-        currentUser = {
-            id: payload.id,
-            email: payload.email,
-            student_id: payload.student_id
-        };
+        currentUser = { id: payload.id, email: payload.email, student_id: payload.student_id };
         
-        // Set user name (you might need an API endpoint to get full user details)
         const userName = currentUser.email.split('@')[0];
-        document.getElementById('userName').textContent = userName;
+        const userEl = document.getElementById('userName');
+        if (userEl) userEl.textContent = userName;
         
-        // Update sidebar with user info
-        document.getElementById('sidebarUserName').textContent = userName;
-        document.getElementById('sidebarUserEmail').textContent = currentUser.email;
+        const sidebarName = document.getElementById('sidebarUserName');
+        const sidebarEmail = document.getElementById('sidebarUserEmail');
+        const initial = document.getElementById('userInitial');
         
-        // Set user initial
-        const initial = currentUser.email.charAt(0).toUpperCase();
-        document.getElementById('userInitial').textContent = initial;
+        if (sidebarName) sidebarName.textContent = userName;
+        if (sidebarEmail) sidebarEmail.textContent = currentUser.email;
+        if (initial) initial.textContent = currentUser.email.charAt(0).toUpperCase();
         
         showDashboard();
         loadUserTeams();
     } catch (error) {
         console.error('Token decode error:', error);
         localStorage.removeItem('token');
-        currentUser = null;
         showAuth();
     }
 }
 
 function showDashboard() {
-    authSection.style.display = 'none';
-    dashboard.style.display = 'block';
-    document.getElementById('sidebar').style.display = 'block';
+    if (authSection) authSection.style.display = 'none';
+    if (dashboard) dashboard.style.display = 'block';
+    if (sidebar) sidebar.style.display = 'block';
 }
 
 function showAuth() {
-    authSection.style.display = 'block';
-    dashboard.style.display = 'none';
-    teamDashboard.style.display = 'none';
-    document.getElementById('sidebar').style.display = 'none';
+    if (authSection) authSection.style.display = 'block';
+    if (dashboard) dashboard.style.display = 'none';
+    const td = document.getElementById('teamDashboard');
+    if (td) td.style.display = 'none';
+    if (sidebar) sidebar.style.display = 'none';
     closeSidebarPanel();
 }
 
 function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.tab === tab);
+        btn?.classList.toggle('active', btn.dataset.tab === tab);
     });
     
-    document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
-    document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+    const loginForm = document.getElementById('loginForm');
+    const registerForm = document.getElementById('registerForm');
+    
+    if (loginForm) loginForm.style.display = tab === 'login' ? 'block' : 'none';
+    if (registerForm) registerForm.style.display = tab === 'register' ? 'block' : 'none';
 }
 
 function openModal(modalId) {
-    document.getElementById(modalId).style.display = 'flex';
-    
-    // If opening task modal, load team members for assignee select
-    if (modalId === 'createTaskModal') {
-        loadTeamMembersForSelect();
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+        if (modalId === 'createTaskModal') {
+            loadTeamMembersForSelect();
+        }
     }
 }
 
 function closeModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
+    const modal = document.getElementById(modalId);
+    if (modal) modal.style.display = 'none';
 }
 
 async function loadTeamMembersForSelect() {
@@ -908,24 +806,24 @@ async function loadTeamMembersForSelect() {
         });
         
         const data = await response.json();
-        
         if (response.ok) {
             populateAssigneeSelect(data);
         }
     } catch (error) {
-        console.error('Load members for select error:', error);
+        console.error('Load members error:', error);
     }
 }
 
 function populateAssigneeSelect(members) {
-    const assigneeSelect = document.getElementById('taskAssignee');
-    assigneeSelect.innerHTML = '<option value="">Select Assignee</option>';
+    const select = document.getElementById('taskAssignee');
+    if (!select) return;
     
-    members.forEach(member => {
+    select.innerHTML = '<option value="">Select Assignee</option>';
+    (members || []).forEach(member => {
         const option = document.createElement('option');
         option.value = member.id;
         option.textContent = `${member.full_name} (${member.student_id})`;
-        assigneeSelect.appendChild(option);
+        select.appendChild(option);
     });
 }
 
@@ -938,33 +836,30 @@ async function populateEditAssigneeSelect(currentAssignee) {
         });
         
         const data = await response.json();
-        
         if (response.ok) {
-            const assigneeSelect = document.getElementById('editTaskAssignee');
-            assigneeSelect.innerHTML = '';
+            const select = document.getElementById('editTaskAssignee');
+            if (!select) return;
             
-            data.forEach(member => {
+            select.innerHTML = '';
+            (data || []).forEach(member => {
                 const option = document.createElement('option');
                 option.value = member.id;
                 option.textContent = `${member.full_name} (${member.student_id})`;
-                if (member.id === currentAssignee) {
-                    option.selected = true;
-                }
-                assigneeSelect.appendChild(option);
+                if (member.id === currentAssignee) option.selected = true;
+                select.appendChild(option);
             });
         }
     } catch (error) {
-        console.error('Load members for edit select error:', error);
+        console.error('Load members error:', error);
     }
 }
 
 function formatDate(dateString) {
     if (!dateString) return 'No due date';
-    
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GH', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric'
-    });
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-GH', { day: 'numeric', month: 'short', year: 'numeric' });
+    } catch (e) {
+        return 'Invalid date';
+    }
 }
