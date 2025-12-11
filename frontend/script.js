@@ -78,46 +78,88 @@ document.addEventListener('DOMContentLoaded', () => {
     teams = [];
     tasks = [];
     
-    // First, ensure auth section is visible and dashboard is hidden
+    // Force hide all sections first with !important style
     const authSection = document.getElementById('authSection');
     const dashboard = document.getElementById('dashboard');
+    const teamDashboard = document.getElementById('teamDashboard');
     const sidebar = document.getElementById('sidebar');
     
-    if (authSection) authSection.style.display = 'block';
-    if (dashboard) dashboard.style.display = 'none';
-    if (sidebar) sidebar.style.display = 'none';
+    // Reset display states forcefully
+    if (authSection) {
+        authSection.style.cssText = 'display: block !important;';
+    }
+    if (dashboard) {
+        dashboard.style.cssText = 'display: none !important;';
+    }
+    if (teamDashboard) {
+        teamDashboard.style.cssText = 'display: none !important;';
+    }
+    if (sidebar) {
+        sidebar.style.cssText = 'display: none !important;';
+    }
     
-    // Clear username display
+    // Clear all user display info
     const userNameElement = document.getElementById('userName');
+    const dashboardTitle = document.getElementById('dashboardTitle');
     if (userNameElement) userNameElement.textContent = '';
+    if (dashboardTitle) dashboardTitle.innerHTML = 'Welcome, <span id="userName"></span>';
+    
+    // Clear sidebar user info
+    const sidebarUserName = document.getElementById('sidebarUserName');
+    const sidebarUserEmail = document.getElementById('sidebarUserEmail');
+    const userInitial = document.getElementById('userInitial');
+    if (sidebarUserName) sidebarUserName.textContent = 'User';
+    if (sidebarUserEmail) sidebarUserEmail.textContent = 'user@email.com';
+    if (userInitial) userInitial.textContent = 'U';
     
     initializeAnalytics();
     setupEventListeners();
     setupSidebarListeners();
     
-    // Check for stored token
+    // IMPORTANT: Always start with auth screen unless token is valid
     const token = localStorage.getItem('token');
-    if (token) {
+    let showDashboard = false;
+    
+    if (token && token.trim().length > 0) {
         try {
             // Validate token by decoding it
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            // Check if token is expired (basic check)
-            if (payload.exp && payload.exp * 1000 < Date.now()) {
-                // Token is expired
-                localStorage.removeItem('token');
-                showAuth();
+            const parts = token.split('.');
+            if (parts.length === 3) {
+                const payload = JSON.parse(atob(parts[1]));
+                // Check if token is expired (basic check)
+                if (payload.exp && payload.exp * 1000 < Date.now()) {
+                    // Token is expired
+                    console.log('Token expired');
+                    localStorage.removeItem('token');
+                    showDashboard = false;
+                } else if (payload.id && payload.email) {
+                    // Token looks valid
+                    console.log('Valid token found');
+                    showDashboard = true;
+                    fetchUserData(token);
+                } else {
+                    console.log('Token missing required fields');
+                    localStorage.removeItem('token');
+                    showDashboard = false;
+                }
             } else {
-                // If we get here, token is valid (at least syntactically)
-                fetchUserData(token);
+                console.log('Invalid token format');
+                localStorage.removeItem('token');
+                showDashboard = false;
             }
         } catch (error) {
             // Token is invalid, clear it and show auth
-            console.error('Invalid token:', error);
+            console.error('Token validation error:', error);
             localStorage.removeItem('token');
-            showAuth();
+            showDashboard = false;
         }
     } else {
-        // No token, show auth screen
+        console.log('No token found');
+        showDashboard = false;
+    }
+    
+    // If no valid token, ensure auth is shown
+    if (!showDashboard) {
         showAuth();
     }
 });
