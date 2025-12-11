@@ -1,99 +1,145 @@
-<!-- frontend/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Academic City - Task Collaboration Board</title>
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
-        <div class="nav-container">
-            <div class="logo">
-                <i class="fas fa-tasks"></i>
-                <h1>Academic City TaskBoard</h1>
-            </div>
-            <div class="nav-links">
-                <a href="#" id="loginBtn">Login</a>
-                <a href="#" id="registerBtn">Register</a>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
-    <main class="container">
-        <!-- Login/Register Forms -->
-        <div id="authSection" class="auth-section">
-            <div class="auth-container">
-                <div class="auth-tabs">
-                    <button class="tab-btn active" data-tab="login">Login</button>
-                    <button class="tab-btn" data-tab="register">Register</button>
+    <!-- Auth Section (Initial View) -->
+    <div id="authSection" class="auth-section">
+        <div class="auth-container">
+            <div class="auth-header">
+                <div class="logo">
+                    <i class="fas fa-tasks"></i>
+                    <h1>Academic City TaskBoard</h1>
                 </div>
-                
-                <div class="auth-form" id="loginForm">
-                    <h2>Student Login</h2>
-                    <form id="loginFormElement">
-                        <input type="email" id="loginEmail" placeholder="Academic Email" required>
-                        <input type="password" id="loginPassword" placeholder="Password" required>
-                        <button type="submit" class="btn-primary">Login</button>
-                    </form>
-                    <div class="test-credentials">
-                        <p><strong>Test Account:</strong></p>
-                        <p>Email: kwame.nkrumah@academiccity.edu.gh</p>
-                        <p>Password: password123</p>
+                <p class="tagline">Collaborate, Organize, Achieve</p>
+            </div>
+            
+            <div class="auth-tabs">
+                <button class="tab-btn active" data-tab="login">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </button>
+                <button class="tab-btn" data-tab="register">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+            </div>
+            
+            <div class="auth-forms">
+                <form id="loginForm" class="auth-form active">
+                    <h2>Welcome Back</h2>
+                    <div class="form-group">
+                        <label for="loginEmail">Academic Email</label>
+                        <input type="email" id="loginEmail" placeholder="student@academiccity.edu.gh" required>
                     </div>
-                </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Password</label>
+                        <input type="password" id="loginPassword" placeholder="Enter your password" required>
+                    </div>
+                    <button type="submit" class="btn-primary btn-block">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    
+                    <div class="test-credentials">
+                        <h4><i class="fas fa-vial"></i> Test Account</h4>
+                        <p><strong>Email:</strong> kwame.nkrumah@academiccity.edu.gh</p>
+                        <p><strong>Password:</strong> password123</p>
+                    </div>
+                </form>
                 
-                <div class="auth-form" id="registerForm" style="display: none;">
-                    <h2>Student Registration</h2>
-                    <form id="registerFormElement">
-                        <input type="text" id="regStudentId" placeholder="Student ID (e.g., ACU2023001)" required>
-                        <input type="text" id="regFullName" placeholder="Full Name" required>
-                        <input type="email" id="regEmail" placeholder="Academic Email" required>
-                        <input type="password" id="regPassword" placeholder="Password (min 6 characters)" required>
-                        <button type="submit" class="btn-primary">Register</button>
-                    </form>
-                </div>
+                <form id="registerForm" class="auth-form">
+                    <h2>Create Account</h2>
+                    <div class="form-group">
+                        <label for="regStudentId">Student ID</label>
+                        <input type="text" id="regStudentId" placeholder="ACU2023001" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regFullName">Full Name</label>
+                        <input type="text" id="regFullName" placeholder="Kwame Nkrumah" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail">Academic Email</label>
+                        <input type="email" id="regEmail" placeholder="student@academiccity.edu.gh" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword">Password</label>
+                        <input type="password" id="regPassword" placeholder="Minimum 6 characters" required>
+                    </div>
+                    <button type="submit" class="btn-primary btn-block">
+                        <i class="fas fa-user-plus"></i> Register
+                    </button>
+                </form>
             </div>
         </div>
+    </div>
 
-        <!-- Dashboard (hidden initially) -->
-        <div id="dashboard" style="display: none;">
-            <div class="dashboard-header">
-                <h2>Welcome, <span id="userName"></span></h2>
-                <button id="logoutBtn" class="btn-secondary">
+    <!-- Main Dashboard (Hidden Initially) -->
+    <div id="dashboard" class="dashboard" style="display: none;">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-tasks"></i>
+                    <h2>TaskBoard</h2>
+                </div>
+                <button id="menuToggle" class="menu-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <div class="user-info">
+                <div class="user-avatar">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="user-details">
+                    <h3 id="userName"></h3>
+                    <p id="userEmail"></p>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h4>Teams</h4>
+                    <button id="createTeamBtn" class="nav-btn">
+                        <i class="fas fa-plus-circle"></i> Create Team
+                    </button>
+                    <button id="joinTeamBtn" class="nav-btn">
+                        <i class="fas fa-user-plus"></i> Join Team
+                    </button>
+                </div>
+                
+                <div class="nav-section">
+                    <h4>Your Teams</h4>
+                    <div id="teamsList" class="teams-list"></div>
+                </div>
+            </nav>
+            
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="nav-btn logout-btn">
                     <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
             </div>
+        </div>
 
-            <!-- Teams Section -->
-            <div class="teams-section">
-                <div class="section-header">
-                    <h3>Your Teams</h3>
-                    <div class="team-actions">
-                        <button id="createTeamBtn" class="btn-primary">
-                            <i class="fas fa-plus"></i> Create Team
-                        </button>
-                        <button id="joinTeamBtn" class="btn-secondary">
-                            <i class="fas fa-user-plus"></i> Join Team
-                        </button>
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Team Dashboard -->
+            <div id="teamDashboard" class="team-dashboard" style="display: none;">
+                <div class="dashboard-header">
+                    <div>
+                        <h1 id="teamName"></h1>
+                        <p class="team-code">Code: <span id="teamCode"></span></p>
                     </div>
-                </div>
-                <div id="teamsList" class="teams-grid"></div>
-            </div>
-
-            <!-- Selected Team Dashboard -->
-            <div id="teamDashboard" style="display: none;">
-                <div class="section-header">
-                    <h3 id="teamName"></h3>
-                    <div class="task-actions">
+                    <div class="header-actions">
                         <button id="createTaskBtn" class="btn-primary">
                             <i class="fas fa-plus"></i> New Task
                         </button>
-                        <select id="taskFilter">
+                        <select id="taskFilter" class="filter-select">
                             <option value="all">All Tasks</option>
                             <option value="Pending">Pending</option>
                             <option value="In Progress">In Progress</option>
@@ -102,89 +148,176 @@
                     </div>
                 </div>
 
-                <!-- Team Stats -->
-                <div id="teamStats" class="stats-grid"></div>
-
-                <!-- Team Members -->
-                <div class="members-section">
-                    <h4>Team Members</h4>
-                    <div id="teamMembers" class="members-list"></div>
+                <!-- Stats -->
+                <div class="stats-container">
+                    <div class="stats-grid" id="teamStats">
+                        <!-- Stats will be populated by JavaScript -->
+                    </div>
                 </div>
 
-                <!-- Tasks List -->
-                <div class="tasks-section">
-                    <h4>Tasks</h4>
-                    <div id="tasksList" class="tasks-grid"></div>
+                <!-- Members & Tasks -->
+                <div class="content-grid">
+                    <div class="members-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-users"></i> Team Members</h3>
+                            <span class="member-count" id="memberCount">0</span>
+                        </div>
+                        <div id="teamMembers" class="members-list"></div>
+                    </div>
+
+                    <div class="tasks-section">
+                        <div class="section-header">
+                            <h3><i class="fas fa-tasks"></i> Tasks</h3>
+                            <span class="task-count" id="taskCount">0</span>
+                        </div>
+                        <div id="tasksList" class="tasks-grid"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty-state">
+                <div class="empty-content">
+                    <i class="fas fa-users"></i>
+                    <h2>Welcome to Your Dashboard</h2>
+                    <p>Get started by creating a new team or joining an existing one.</p>
+                    <div class="empty-actions">
+                        <button id="createTeamBtnMain" class="btn-primary">
+                            <i class="fas fa-plus"></i> Create Team
+                        </button>
+                        <button id="joinTeamBtnMain" class="btn-secondary">
+                            <i class="fas fa-user-plus"></i> Join Team
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </main>
+    </div>
 
     <!-- Modals -->
     <div id="createTeamModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Create New Team</h3>
+            <button class="close">&times;</button>
+            <h3><i class="fas fa-plus-circle"></i> Create New Team</h3>
             <form id="createTeamForm">
-                <input type="text" id="teamNameInput" placeholder="Team Name" required>
-                <button type="submit" class="btn-primary">Create Team</button>
+                <div class="form-group">
+                    <label for="teamNameInput">Team Name</label>
+                    <input type="text" id="teamNameInput" placeholder="Enter team name" required>
+                </div>
+                <button type="submit" class="btn-primary btn-block">
+                    <i class="fas fa-check"></i> Create Team
+                </button>
             </form>
         </div>
     </div>
 
     <div id="joinTeamModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Join Team</h3>
+            <button class="close">&times;</button>
+            <h3><i class="fas fa-user-plus"></i> Join Team</h3>
             <form id="joinTeamForm">
-                <input type="text" id="teamCodeInput" placeholder="Team Code" required>
-                <button type="submit" class="btn-primary">Join Team</button>
+                <div class="form-group">
+                    <label for="teamCodeInput">Team Code</label>
+                    <input type="text" id="teamCodeInput" placeholder="Enter team code" required>
+                </div>
+                <button type="submit" class="btn-primary btn-block">
+                    <i class="fas fa-check"></i> Join Team
+                </button>
             </form>
         </div>
     </div>
 
     <div id="createTaskModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Create New Task</h3>
+            <button class="close">&times;</button>
+            <h3><i class="fas fa-plus"></i> Create New Task</h3>
             <form id="createTaskForm">
-                <input type="text" id="taskTitle" placeholder="Task Title" required>
-                <textarea id="taskDescription" placeholder="Description" rows="3"></textarea>
-                <select id="taskPriority" required>
-                    <option value="Low">Low Priority</option>
-                    <option value="Medium" selected>Medium Priority</option>
-                    <option value="High">High Priority</option>
-                </select>
-                <select id="taskAssignee" required></select>
-                <input type="date" id="taskDueDate" required>
-                <button type="submit" class="btn-primary">Create Task</button>
+                <div class="form-group">
+                    <label for="taskTitle">Task Title</label>
+                    <input type="text" id="taskTitle" placeholder="Enter task title" required>
+                </div>
+                <div class="form-group">
+                    <label for="taskDescription">Description</label>
+                    <textarea id="taskDescription" placeholder="Enter task description" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="taskPriority">Priority</label>
+                        <select id="taskPriority" required>
+                            <option value="Low">Low</option>
+                            <option value="Medium" selected>Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="taskDueDate">Due Date</label>
+                        <input type="date" id="taskDueDate" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="taskAssignee">Assign To</label>
+                    <select id="taskAssignee" required>
+                        <option value="">Select a team member</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary btn-block">
+                    <i class="fas fa-check"></i> Create Task
+                </button>
             </form>
         </div>
     </div>
 
     <div id="editTaskModal" class="modal">
         <div class="modal-content">
-            <span class="close">&times;</span>
-            <h3>Edit Task</h3>
+            <button class="close">&times;</button>
+            <h3><i class="fas fa-edit"></i> Edit Task</h3>
             <form id="editTaskForm">
                 <input type="hidden" id="editTaskId">
-                <input type="text" id="editTaskTitle" placeholder="Task Title" required>
-                <textarea id="editTaskDescription" placeholder="Description" rows="3"></textarea>
-                <select id="editTaskStatus" required>
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                </select>
-                <select id="editTaskPriority" required>
-                    <option value="Low">Low Priority</option>
-                    <option value="Medium">Medium Priority</option>
-                    <option value="High">High Priority</option>
-                </select>
-                <select id="editTaskAssignee"></select>
-                <input type="date" id="editTaskDueDate" required>
+                <div class="form-group">
+                    <label for="editTaskTitle">Task Title</label>
+                    <input type="text" id="editTaskTitle" placeholder="Enter task title" required>
+                </div>
+                <div class="form-group">
+                    <label for="editTaskDescription">Description</label>
+                    <textarea id="editTaskDescription" placeholder="Enter task description" rows="3"></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editTaskStatus">Status</label>
+                        <select id="editTaskStatus" required>
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="editTaskPriority">Priority</label>
+                        <select id="editTaskPriority" required>
+                            <option value="Low">Low</option>
+                            <option value="Medium">Medium</option>
+                            <option value="High">High</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editTaskDueDate">Due Date</label>
+                        <input type="date" id="editTaskDueDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="editTaskAssignee">Assign To</label>
+                        <select id="editTaskAssignee">
+                            <option value="">Select a team member</option>
+                        </select>
+                    </div>
+                </div>
                 <div class="modal-actions">
-                    <button type="submit" class="btn-primary">Update Task</button>
-                    <button type="button" id="deleteTaskBtn" class="btn-danger">Delete Task</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Update Task
+                    </button>
+                    <button type="button" id="deleteTaskBtn" class="btn-danger">
+                        <i class="fas fa-trash"></i> Delete Task
+                    </button>
                 </div>
             </form>
         </div>

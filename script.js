@@ -1,44 +1,4 @@
-// frontend/script.js
 const API_BASE_URL = 'https://camous-taskboard-system.onrender.com/api';
-
-// Helper function for API calls with retry logic
-async function apiCall(endpoint, options = {}) {
-    const maxRetries = 3;
-    let lastError;
-    
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-                ...options,
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                }
-            });
-            
-            if (!response.ok && response.status === 0) {
-                throw new Error('Network error - possible HTTP/2 issue');
-            }
-            
-            return response;
-        } catch (error) {
-            lastError = error;
-            if (attempt < maxRetries) {
-                console.warn(`API call attempt ${attempt} failed, retrying...`);
-                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-            }
-        }
-    }
-    
-    throw lastError;
-}
-
-// DOM Elements
-const authSection = document.getElementById('authSection');
-const dashboard = document.getElementById('dashboard');
-const teamsList = document.getElementById('teamsList');
-const teamDashboard = document.getElementById('teamDashboard');
-const taskFilter = document.getElementById('taskFilter');
 
 // State
 let currentUser = null;
@@ -46,13 +6,22 @@ let currentTeam = null;
 let teams = [];
 let tasks = [];
 
+// DOM Elements
+const authSection = document.getElementById('authSection');
+const dashboard = document.getElementById('dashboard');
+const loginForm = document.getElementById('loginForm');
+const registerForm = document.getElementById('registerForm');
+const teamDashboard = document.getElementById('teamDashboard');
+const emptyState = document.getElementById('emptyState');
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     // Check for stored token
     const token = localStorage.getItem('token');
     if (token) {
-        // Validate token
-        fetchUserData(token);
+        validateToken(token);
+    } else {
+        showAuth();
     }
     
     setupEventListeners();
@@ -69,23 +38,25 @@ function setupEventListeners() {
     });
     
     // Login form
-    document.getElementById('loginFormElement').addEventListener('submit', handleLogin);
+    loginForm.addEventListener('submit', handleLogin);
     
     // Register form
-    document.getElementById('registerFormElement').addEventListener('submit', handleRegister);
+    registerForm.addEventListener('submit', handleRegister);
     
     // Logout
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
     
-    // Team actions
+    // Team buttons (multiple instances)
     document.getElementById('createTeamBtn').addEventListener('click', () => openModal('createTeamModal'));
     document.getElementById('joinTeamBtn').addEventListener('click', () => openModal('joinTeamModal'));
+    document.getElementById('createTeamBtnMain').addEventListener('click', () => openModal('createTeamModal'));
+    document.getElementById('joinTeamBtnMain').addEventListener('click', () => openModal('joinTeamModal'));
     
     // Task actions
     document.getElementById('createTaskBtn').addEventListener('click', () => openModal('createTaskModal'));
     
     // Task filter
-    taskFilter.addEventListener('change', loadTeamTasks);
+    document.getElementById('taskFilter').addEventListener('change', loadTeamTasks);
     
     // Modal forms
     document.getElementById('createTeamForm').addEventListener('submit', handleCreateTeam);
@@ -93,6 +64,9 @@ function setupEventListeners() {
     document.getElementById('createTaskForm').addEventListener('submit', handleCreateTask);
     document.getElementById('editTaskForm').addEventListener('submit', handleUpdateTask);
     document.getElementById('deleteTaskBtn').addEventListener('click', handleDeleteTask);
+    
+    // Menu toggle
+    document.getElementById('menuToggle').addEventListener('click', toggleSidebar);
     
     // Close modals
     document.querySelectorAll('.modal .close').forEach(closeBtn => {
@@ -107,6 +81,19 @@ function setupEventListeners() {
             event.target.style.display = 'none';
         }
     });
+    
+    // Mobile menu close on click outside
+    document.addEventListener('click', (event) => {
+        const sidebar = document.querySelector('.sidebar');
+        const menuToggle = document.getElementById('menuToggle');
+        
+        if (window.innerWidth <= 768 && 
+            !sidebar.contains(event.target) && 
+            !menuToggle.contains(event.target) &&
+            sidebar.classList.contains('active')) {
+            toggleSidebar();
+        }
+    });
 }
 
 // Auth Functions
@@ -117,8 +104,9 @@ async function handleLogin(e) {
     const password = document.getElementById('loginPassword').value;
     
     try {
-        const response = await apiCall('/login', {
+        const response = await fetch(`${API_BASE_URL}/login`, {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password })
         });
         
@@ -127,10 +115,11 @@ async function handleLogin(e) {
         if (response.ok) {
             localStorage.setItem('token', data.token);
             currentUser = data.user;
+            await fetchUserData();
             showDashboard();
             loadUserTeams();
         } else {
-            alert(data.error || 'Login failed');
+            alert(data.error || 'Login failed. Please check your credentials.');
         }
     } catch (error) {
         console.error('Login error:', error);
@@ -152,9 +141,15 @@ async function handleRegister(e) {
     }
     
     try {
-        const response = await apiCall('/register', {
+        const response = await fetch(`${API_BASE_URL}/register`, {
             method: 'POST',
-            body: JSON.stringify({ student_id: studentId, full_name: fullName, email, password })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                student_id: studentId, 
+                full_name: fullName, 
+                email, 
+                password 
+            })
         });
         
         const data = await response.json();
@@ -164,7 +159,7 @@ async function handleRegister(e) {
             switchTab('login');
             e.target.reset();
         } else {
-            alert(data.error || 'Registration failed');
+            alert(data.error || 'Registration failed. Please try again.');
         }
     } catch (error) {
         console.error('Register error:', error);
@@ -172,62 +167,116 @@ async function handleRegister(e) {
     }
 }
 
+async function validateToken(token) {
+    try {
+        // Try to decode token and set user
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        if (payload.exp * 1000 < Date.now()) {
+            throw new Error('Token expired');
+        }
+        
+        currentUser = {
+            id: payload.id,
+            email: payload.email,
+            student_id: payload.student_id
+        };
+        
+        await fetchUserData();
+        showDashboard();
+        loadUserTeams();
+    } catch (error) {
+        console.error('Token validation error:', error);
+        localStorage.removeItem('token');
+        showAuth();
+    }
+}
+
+async function fetchUserData() {
+    if (!currentUser) return;
+    
+    // Update UI with user info
+    document.getElementById('userName').textContent = currentUser.student_id || currentUser.email.split('@')[0];
+    document.getElementById('userEmail').textContent = currentUser.email;
+}
+
 function handleLogout() {
-    localStorage.removeItem('token');
-    currentUser = null;
-    currentTeam = null;
-    showAuth();
+    if (confirm('Are you sure you want to logout?')) {
+        localStorage.removeItem('token');
+        currentUser = null;
+        currentTeam = null;
+        teams = [];
+        tasks = [];
+        showAuth();
+    }
+}
+
+// Tab Switching
+function switchTab(tab) {
+    // Update active tab button
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tab);
+    });
+    
+    // Show active form
+    document.querySelectorAll('.auth-form').forEach(form => {
+        form.classList.toggle('active', form.id === `${tab}Form`);
+    });
 }
 
 // Team Functions
 async function loadUserTeams() {
     try {
-        const response = await fetch(`${API_BASE_URL}/user/teams`, {
-            headers: getAuthHeaders()
-        });
-        
-        const data = await response.json();
+        const response = await fetchWithAuth(`${API_BASE_URL}/user/teams`);
         
         if (response.ok) {
-            teams = data;
+            teams = await response.json();
             renderTeams();
+            updateEmptyState();
+        } else {
+            throw new Error('Failed to load teams');
         }
     } catch (error) {
         console.error('Load teams error:', error);
+        teams = [];
+        renderTeams();
     }
 }
 
 function renderTeams() {
+    const teamsList = document.getElementById('teamsList');
     teamsList.innerHTML = '';
     
     if (teams.length === 0) {
-        teamsList.innerHTML = '<p class="no-teams">No teams yet. Create or join a team to get started!</p>';
+        teamsList.innerHTML = '<div class="no-teams">No teams yet</div>';
         return;
     }
     
     teams.forEach(team => {
-        const teamCard = document.createElement('div');
-        teamCard.className = 'team-card';
-        teamCard.innerHTML = `
-            <h4>${team.team_name}</h4>
-            <p><strong>Code:</strong> ${team.team_code}</p>
-            <p><small>Click to view team dashboard</small></p>
+        const teamItem = document.createElement('button');
+        teamItem.className = `team-nav-item ${currentTeam?.id === team.id ? 'active' : ''}`;
+        teamItem.innerHTML = `
+            <i class="fas fa-users"></i>
+            <span>${team.team_name}</span>
         `;
         
-        teamCard.addEventListener('click', () => openTeamDashboard(team));
-        teamsList.appendChild(teamCard);
+        teamItem.addEventListener('click', () => openTeamDashboard(team));
+        teamsList.appendChild(teamItem);
     });
 }
 
 async function handleCreateTeam(e) {
     e.preventDefault();
     
-    const teamName = document.getElementById('teamNameInput').value;
+    const teamName = document.getElementById('teamNameInput').value.trim();
+    
+    if (!teamName) {
+        alert('Please enter a team name');
+        return;
+    }
     
     try {
-        const response = await fetch(`${API_BASE_URL}/teams`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/teams`, {
             method: 'POST',
-            headers: getAuthHeaders(),
             body: JSON.stringify({ team_name: teamName })
         });
         
@@ -238,6 +287,7 @@ async function handleCreateTeam(e) {
             e.target.reset();
             teams.push(data);
             renderTeams();
+            await openTeamDashboard(data);
             alert('Team created successfully!');
         } else {
             alert(data.error || 'Failed to create team');
@@ -251,12 +301,16 @@ async function handleCreateTeam(e) {
 async function handleJoinTeam(e) {
     e.preventDefault();
     
-    const teamCode = document.getElementById('teamCodeInput').value;
+    const teamCode = document.getElementById('teamCodeInput').value.trim();
+    
+    if (!teamCode) {
+        alert('Please enter a team code');
+        return;
+    }
     
     try {
-        const response = await fetch(`${API_BASE_URL}/teams/join`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/teams/join`, {
             method: 'POST',
-            headers: getAuthHeaders(),
             body: JSON.stringify({ team_code: teamCode })
         });
         
@@ -268,7 +322,7 @@ async function handleJoinTeam(e) {
             await loadUserTeams();
             alert('Joined team successfully!');
         } else {
-            alert(data.error || 'Failed to join team');
+            alert(data.error || data.message || 'Failed to join team');
         }
     } catch (error) {
         console.error('Join team error:', error);
@@ -279,34 +333,65 @@ async function handleJoinTeam(e) {
 // Team Dashboard Functions
 async function openTeamDashboard(team) {
     currentTeam = team;
+    
+    // Update UI
     document.getElementById('teamName').textContent = team.team_name;
+    document.getElementById('teamCode').textContent = team.team_code;
+    
+    // Show team dashboard, hide empty state
     teamDashboard.style.display = 'block';
+    emptyState.style.display = 'none';
     
-    // Scroll to team dashboard
-    teamDashboard.scrollIntoView({ behavior: 'smooth' });
+    // Update active team in sidebar
+    document.querySelectorAll('.team-nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    document.querySelectorAll('.team-nav-item').forEach(item => {
+        if (item.querySelector('span')?.textContent === team.team_name) {
+            item.classList.add('active');
+        }
+    });
     
+    // Load team data
     await loadTeamDashboard();
+    
+    // Close sidebar on mobile
+    if (window.innerWidth <= 768) {
+        toggleSidebar();
+    }
+}
+
+function closeTeamDashboard() {
+    currentTeam = null;
+    teamDashboard.style.display = 'none';
+    emptyState.style.display = 'flex';
+    
+    // Update active team in sidebar
+    document.querySelectorAll('.team-nav-item').forEach(item => {
+        item.classList.remove('active');
+    });
 }
 
 async function loadTeamDashboard() {
-    await Promise.all([
-        loadTeamStats(),
-        loadTeamMembers(),
-        loadTeamTasks()
-    ]);
+    try {
+        await Promise.all([
+            loadTeamStats(),
+            loadTeamMembers(),
+            loadTeamTasks()
+        ]);
+    } catch (error) {
+        console.error('Load team dashboard error:', error);
+    }
 }
 
 async function loadTeamStats() {
     try {
-        const response = await fetch(`${API_BASE_URL}/teams/${currentTeam.id}/dashboard`, {
-            headers: getAuthHeaders()
-        });
-        
-        const data = await response.json();
+        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${currentTeam.id}/dashboard`);
         
         if (response.ok) {
-            renderTeamStats(data.summary);
-            renderTeamMembers(data.members);
+            const data = await response.json();
+            renderTeamStats(data.summary || {});
+            renderTeamMembers(data.members || []);
         }
     } catch (error) {
         console.error('Load stats error:', error);
@@ -337,14 +422,12 @@ function renderTeamStats(stats) {
 
 async function loadTeamMembers() {
     try {
-        const response = await fetch(`${API_BASE_URL}/teams/${currentTeam.id}/members`, {
-            headers: getAuthHeaders()
-        });
-        
-        const data = await response.json();
+        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${currentTeam.id}/members`);
         
         if (response.ok) {
-            populateAssigneeSelect(data);
+            const members = await response.json();
+            renderTeamMembers(members);
+            updateMemberCount(members.length);
         }
     } catch (error) {
         console.error('Load members error:', error);
@@ -355,17 +438,21 @@ function renderTeamMembers(members) {
     const membersList = document.getElementById('teamMembers');
     membersList.innerHTML = '';
     
+    if (members.length === 0) {
+        membersList.innerHTML = '<div class="no-teams">No members found</div>';
+        return;
+    }
+    
     members.forEach(member => {
         const memberCard = document.createElement('div');
         memberCard.className = 'member-card';
         memberCard.innerHTML = `
             <div class="member-avatar">
-                ${member.full_name.charAt(0)}
+                ${member.full_name?.charAt(0) || '?'}
             </div>
-            <div>
-                <strong>${member.full_name}</strong>
-                <p>${member.student_id}</p>
-                <p><small>Tasks: ${member.task_count || 0}</small></p>
+            <div class="member-info">
+                <h4>${member.full_name || 'Unknown'}</h4>
+                <p>${member.student_id || 'No ID'}</p>
             </div>
         `;
         membersList.appendChild(memberCard);
@@ -373,21 +460,24 @@ function renderTeamMembers(members) {
 }
 
 async function loadTeamTasks() {
-    const status = taskFilter.value;
+    const status = document.getElementById('taskFilter').value;
     
     try {
-        const response = await fetch(`${API_BASE_URL}/teams/${currentTeam.id}/tasks?status=${status}`, {
-            headers: getAuthHeaders()
-        });
+        const url = status === 'all' 
+            ? `${API_BASE_URL}/teams/${currentTeam.id}/tasks`
+            : `${API_BASE_URL}/teams/${currentTeam.id}/tasks?status=${status}`;
         
-        const data = await response.json();
+        const response = await fetchWithAuth(url);
         
         if (response.ok) {
-            tasks = data;
+            tasks = await response.json();
             renderTasks();
+            updateTaskCount(tasks.length);
         }
     } catch (error) {
         console.error('Load tasks error:', error);
+        tasks = [];
+        renderTasks();
     }
 }
 
@@ -396,7 +486,7 @@ function renderTasks() {
     tasksList.innerHTML = '';
     
     if (tasks.length === 0) {
-        tasksList.innerHTML = '<p class="no-tasks">No tasks found. Create your first task!</p>';
+        tasksList.innerHTML = '<div class="no-tasks">No tasks found</div>';
         return;
     }
     
@@ -406,13 +496,20 @@ function renderTasks() {
         taskCard.innerHTML = `
             <div class="task-header">
                 <div>
-                    <div class="task-title">${task.title}</div>
-                    <p class="task-description">${task.description || 'No description'}</p>
+                    <div class="task-title">${task.title || 'Untitled Task'}</div>
+                    <p class="task-description">${task.description || 'No description provided'}</p>
                 </div>
-                <span class="task-priority ${task.priority.toLowerCase()}">${task.priority}</span>
+                <span class="task-priority ${task.priority?.toLowerCase() || 'medium'}">
+                    ${task.priority || 'Medium'}
+                </span>
             </div>
             <div class="task-meta">
-                <span>Assigned to: ${task.assigned_name || 'Unassigned'}</span>
+                <div class="task-assignee">
+                    <div class="assignee-avatar">
+                        ${task.assigned_name?.charAt(0) || '?'}
+                    </div>
+                    <span>${task.assigned_name || 'Unassigned'}</span>
+                </div>
                 <span>Due: ${formatDate(task.due_date)}</span>
             </div>
         `;
@@ -423,19 +520,75 @@ function renderTasks() {
 }
 
 // Task Functions
+async function loadTeamMembersForSelect() {
+    if (!currentTeam) return;
+    
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${currentTeam.id}/members`);
+        
+        if (response.ok) {
+            const members = await response.json();
+            populateAssigneeSelect(members);
+        }
+    } catch (error) {
+        console.error('Load members for select error:', error);
+    }
+}
+
+function populateAssigneeSelect(members) {
+    const assigneeSelect = document.getElementById('taskAssignee');
+    assigneeSelect.innerHTML = '<option value="">Select a team member</option>';
+    
+    members.forEach(member => {
+        const option = document.createElement('option');
+        option.value = member.id;
+        option.textContent = `${member.full_name} (${member.student_id})`;
+        assigneeSelect.appendChild(option);
+    });
+}
+
+async function populateEditAssigneeSelect(members, currentAssignee) {
+    const assigneeSelect = document.getElementById('editTaskAssignee');
+    assigneeSelect.innerHTML = '<option value="">Select a team member</option>';
+    
+    members.forEach(member => {
+        const option = document.createElement('option');
+        option.value = member.id;
+        option.textContent = `${member.full_name} (${member.student_id})`;
+        if (member.id === currentAssignee) {
+            option.selected = true;
+        }
+        assigneeSelect.appendChild(option);
+    });
+}
+
 async function handleCreateTask(e) {
     e.preventDefault();
     
-    const title = document.getElementById('taskTitle').value;
-    const description = document.getElementById('taskDescription').value;
+    const title = document.getElementById('taskTitle').value.trim();
+    const description = document.getElementById('taskDescription').value.trim();
     const priority = document.getElementById('taskPriority').value;
     const assigned_to = document.getElementById('taskAssignee').value;
     const due_date = document.getElementById('taskDueDate').value;
     
+    if (!title) {
+        alert('Please enter a task title');
+        return;
+    }
+    
+    if (!assigned_to) {
+        alert('Please assign the task to a team member');
+        return;
+    }
+    
+    if (!due_date) {
+        alert('Please select a due date');
+        return;
+    }
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/tasks`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/tasks`, {
             method: 'POST',
-            headers: getAuthHeaders(),
             body: JSON.stringify({
                 title,
                 description,
@@ -463,15 +616,25 @@ async function handleCreateTask(e) {
     }
 }
 
-function openEditTaskModal(task) {
+async function openEditTaskModal(task) {
     document.getElementById('editTaskId').value = task.id;
-    document.getElementById('editTaskTitle').value = task.title;
+    document.getElementById('editTaskTitle').value = task.title || '';
     document.getElementById('editTaskDescription').value = task.description || '';
-    document.getElementById('editTaskStatus').value = task.status;
-    document.getElementById('editTaskPriority').value = task.priority;
-    document.getElementById('editTaskDueDate').value = task.due_date;
+    document.getElementById('editTaskStatus').value = task.status || 'Pending';
+    document.getElementById('editTaskPriority').value = task.priority || 'Medium';
+    document.getElementById('editTaskDueDate').value = task.due_date || '';
     
-    populateEditAssigneeSelect(task.assigned_to);
+    // Load members for assignee select
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${currentTeam.id}/members`);
+        if (response.ok) {
+            const members = await response.json();
+            await populateEditAssigneeSelect(members, task.assigned_to);
+        }
+    } catch (error) {
+        console.error('Load members for edit error:', error);
+    }
+    
     openModal('editTaskModal');
 }
 
@@ -479,17 +642,21 @@ async function handleUpdateTask(e) {
     e.preventDefault();
     
     const taskId = document.getElementById('editTaskId').value;
-    const title = document.getElementById('editTaskTitle').value;
-    const description = document.getElementById('editTaskDescription').value;
+    const title = document.getElementById('editTaskTitle').value.trim();
+    const description = document.getElementById('editTaskDescription').value.trim();
     const status = document.getElementById('editTaskStatus').value;
     const priority = document.getElementById('editTaskPriority').value;
     const assigned_to = document.getElementById('editTaskAssignee').value;
     const due_date = document.getElementById('editTaskDueDate').value;
     
+    if (!title) {
+        alert('Please enter a task title');
+        return;
+    }
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/tasks/${taskId}`, {
             method: 'PUT',
-            headers: getAuthHeaders(),
             body: JSON.stringify({
                 title,
                 description,
@@ -517,16 +684,15 @@ async function handleUpdateTask(e) {
 }
 
 async function handleDeleteTask() {
-    const taskId = document.getElementById('editTaskId').value;
-    
-    if (!confirm('Are you sure you want to delete this task?')) {
+    if (!confirm('Are you sure you want to delete this task? This action cannot be undone.')) {
         return;
     }
     
+    const taskId = document.getElementById('editTaskId').value;
+    
     try {
-        const response = await fetch(`${API_BASE_URL}/tasks/${taskId}`, {
-            method: 'DELETE',
-            headers: getAuthHeaders()
+        const response = await fetchWithAuth(`${API_BASE_URL}/tasks/${taskId}`, {
+            method: 'DELETE'
         });
         
         const data = await response.json();
@@ -545,59 +711,34 @@ async function handleDeleteTask() {
     }
 }
 
-// Helper Functions
-function getAuthHeaders() {
-    const token = localStorage.getItem('token');
-    return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-    };
-}
-
-async function fetchUserData(token) {
-    try {
-        // Decode token to get user info
-        if (!token) {
-            localStorage.removeItem('token');
-            showAuth();
-            return;
-        }
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        currentUser = {
-            id: payload.id,
-            email: payload.email,
-            student_id: payload.student_id
-        };
-        
-        // Set user name (you might need an API endpoint to get full user details)
-        document.getElementById('userName').textContent = currentUser.email.split('@')[0];
-        
-        showDashboard();
-        loadUserTeams();
-    } catch (error) {
-        console.error('Token decode error:', error);
-        localStorage.removeItem('token');
-    }
-}
-
+// UI Helper Functions
 function showDashboard() {
     authSection.style.display = 'none';
-    dashboard.style.display = 'block';
+    dashboard.style.display = 'flex';
 }
 
 function showAuth() {
     authSection.style.display = 'block';
     dashboard.style.display = 'none';
-    teamDashboard.style.display = 'none';
+    
+    // Clear forms
+    loginForm.reset();
+    registerForm.reset();
 }
 
-function switchTab(tab) {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.tab === tab);
-    });
-    
-    document.getElementById('loginForm').style.display = tab === 'login' ? 'block' : 'none';
-    document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+function updateEmptyState() {
+    if (teams.length === 0) {
+        teamDashboard.style.display = 'none';
+        emptyState.style.display = 'flex';
+    }
+}
+
+function updateMemberCount(count) {
+    document.getElementById('memberCount').textContent = count;
+}
+
+function updateTaskCount(count) {
+    document.getElementById('taskCount').textContent = count;
 }
 
 function openModal(modalId) {
@@ -606,72 +747,63 @@ function openModal(modalId) {
     // If opening task modal, load team members for assignee select
     if (modalId === 'createTaskModal') {
         loadTeamMembersForSelect();
+        // Set today's date as default
+        document.getElementById('taskDueDate').valueAsDate = new Date();
+    } else if (modalId === 'editTaskModal') {
+        // Set today's date as default for edit if not set
+        const dueDateInput = document.getElementById('editTaskDueDate');
+        if (!dueDateInput.value) {
+            dueDateInput.valueAsDate = new Date();
+        }
     }
 }
 
 function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
-}
-
-async function loadTeamMembersForSelect() {
-    if (!currentTeam) return;
     
-    try {
-        const response = await fetch(`${API_BASE_URL}/teams/${currentTeam.id}/members`, {
-            headers: getAuthHeaders()
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            populateAssigneeSelect(data);
-        }
-    } catch (error) {
-        console.error('Load members for select error:', error);
+    // Reset form
+    const form = document.querySelector(`#${modalId} form`);
+    if (form) {
+        form.reset();
     }
 }
 
-function populateAssigneeSelect(members) {
-    const assigneeSelect = document.getElementById('taskAssignee');
-    assigneeSelect.innerHTML = '<option value="">Select Assignee</option>';
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    if (window.innerWidth <= 768) {
+        sidebar.classList.toggle('active');
+    } else {
+        sidebar.classList.toggle('collapsed');
+    }
+}
+
+// API Helper Function
+async function fetchWithAuth(url, options = {}) {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        throw new Error('No authentication token');
+    }
     
-    members.forEach(member => {
-        const option = document.createElement('option');
-        option.value = member.id;
-        option.textContent = `${member.full_name} (${member.student_id})`;
-        assigneeSelect.appendChild(option);
+    const response = await fetch(url, {
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+            ...options.headers
+        }
     });
-}
-
-async function populateEditAssigneeSelect(currentAssignee) {
-    if (!currentTeam) return;
     
-    try {
-        const response = await fetch(`${API_BASE_URL}/teams/${currentTeam.id}/members`, {
-            headers: getAuthHeaders()
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            const assigneeSelect = document.getElementById('editTaskAssignee');
-            assigneeSelect.innerHTML = '';
-            
-            data.forEach(member => {
-                const option = document.createElement('option');
-                option.value = member.id;
-                option.textContent = `${member.full_name} (${member.student_id})`;
-                if (member.id === currentAssignee) {
-                    option.selected = true;
-                }
-                assigneeSelect.appendChild(option);
-            });
-        }
-    } catch (error) {
-        console.error('Load members for edit select error:', error);
+    // If token is invalid, logout
+    if (response.status === 401) {
+        localStorage.removeItem('token');
+        showAuth();
+        throw new Error('Authentication failed');
     }
+    
+    return response;
 }
 
+// Format Date
 function formatDate(dateString) {
     if (!dateString) return 'No due date';
     
