@@ -42,6 +42,8 @@ try {
             console.log('Database connection test succeeded');
             // Add missing columns if they don't exist
             addMissingColumns();
+            // Create test user if it doesn't exist
+            createTestUser();
         }
     });
 } catch (err) {
@@ -68,6 +70,27 @@ async function addMissingColumns() {
         }
     } catch (error) {
         console.error('Error adding missing columns:', error);
+    }
+}
+
+async function createTestUser() {
+    try {
+        // Check if test user already exists
+        const userCheck = await pool.query("SELECT 1 FROM users WHERE email = $1", ['student001@academiccity.edu']);
+        if (userCheck.rows.length > 0) {
+            console.log('Test user already exists');
+            return;
+        }
+        
+        // Create test user
+        const passwordHash = await bcrypt.hash('password123', 10);
+        await pool.query(
+            'INSERT INTO users (student_id, full_name, email, password_hash) VALUES ($1, $2, $3, $4)',
+            ['STU001', 'Test Student', 'student001@academiccity.edu', passwordHash]
+        );
+        console.log('Created test user: student001@academiccity.edu');
+    } catch (error) {
+        console.error('Error creating test user:', error);
     }
 }
 
