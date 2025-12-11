@@ -40,6 +40,8 @@ try {
             console.error('Database connection test failed:', err.message);
         } else {
             console.log('Database connection test succeeded');
+            // Add missing columns if they don't exist
+            addMissingColumns();
         }
     });
 } catch (err) {
@@ -48,6 +50,26 @@ try {
 
 
 const JWT_SECRET = process.env.JWT_SECRET || 'academic_city_secret_key';
+
+async function addMissingColumns() {
+    try {
+        // Check and add description column
+        const descCheck = await pool.query("SELECT 1 FROM information_schema.columns WHERE table_name = 'teams' AND column_name = 'description'");
+        if (descCheck.rows.length === 0) {
+            await pool.query("ALTER TABLE teams ADD COLUMN description TEXT");
+            console.log('Added description column to teams table');
+        }
+        
+        // Check and add max_members column
+        const maxCheck = await pool.query("SELECT 1 FROM information_schema.columns WHERE table_name = 'teams' AND column_name = 'max_members'");
+        if (maxCheck.rows.length === 0) {
+            await pool.query("ALTER TABLE teams ADD COLUMN max_members INTEGER");
+            console.log('Added max_members column to teams table');
+        }
+    } catch (error) {
+        console.error('Error adding missing columns:', error);
+    }
+}
 
 
 const authenticateToken = (req, res, next) => {
