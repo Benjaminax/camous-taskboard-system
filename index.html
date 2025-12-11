@@ -18,7 +18,7 @@
                     <i class="fas fa-tasks"></i>
                     <h1>TaskBoard</h1>
                 </div>
-                <p class="tagline">Student Task Collaboration System</p>
+                <p class="tagline">A collaboration hub for Academic City University students working on group projects</p>
             </div>
             
             <div class="auth-tabs">
@@ -51,9 +51,11 @@
                     </button>
                     
                     <div class="test-credentials">
-                        <p><strong>Test Account:</strong></p>
-                        <p>Email: test@example.com</p>
+                        <p><strong>Need a quick login?</strong></p>
+                        <p>Try a sample student account:</p>
+                        <p>Email: student001@academiccity.edu</p>
                         <p>Password: password123</p>
+                        <p class="muted">(This is a demo account — create your own to test full features)</p>
                     </div>
                 </form>
                 
@@ -115,6 +117,7 @@
                 <div class="user-details">
                     <h3 id="userName"></h3>
                     <p id="userEmail"></p>
+                    <span id="userRoleBadge" class="user-role-badge" style="display:none;">Admin</span>
                 </div>
             </div>
             
@@ -123,6 +126,9 @@
                     <h4>Navigation</h4>
                     <button id="homeBtn" class="nav-btn active">
                         <i class="fas fa-home"></i> Home
+                    </button>
+                    <button id="adminBtn" class="nav-btn" style="display:none;">
+                        <i class="fas fa-user-shield"></i> Admin
                     </button>
                     <h4 style="margin-top: 10px">Team Actions</h4>
                     <button id="createTeamBtn" class="nav-btn">
@@ -162,9 +168,15 @@
                         </div>
                     </div>
                     <div class="header-actions">
-                        <button id="createTaskBtn" class="btn-primary">
+                            <button id="createTaskBtn" class="btn-primary">
                             <i class="fas fa-plus"></i> New Task
                         </button>
+                            <button id="leaveTeamBtn" class="btn-secondary">
+                                <i class="fas fa-sign-out-alt"></i> Leave Team
+                            </button>
+                            <button id="deleteTeamBtn" class="btn-danger">
+                                <i class="fas fa-trash"></i> Delete Team
+                            </button>
                         <button id="inviteMemberBtn" class="btn-secondary">
                             <i class="fas fa-user-plus"></i> Invite
                         </button>
@@ -226,6 +238,28 @@
                 </div>
                 
                 <div class="teams-grid" id="allTeamsList"></div>
+            </div>
+
+            <!-- Home Dashboard -->
+            <div id="homeDashboard" class="home-dashboard" style="display: none;">
+                <div class="section-header">
+                    <h1><i class="fas fa-home"></i> Home</h1>
+                </div>
+                <div class="stats-grid" id="homeStats"></div>
+                <div id="homeRecentTasks" class="recent-tasks"></div>
+            </div>
+
+            <!-- Admin Panel -->
+            <div id="adminPanel" class="admin-panel" style="display:none;">
+                <div class="section-header">
+                    <h1><i class="fas fa-user-shield"></i> Admin</h1>
+                    <div class="admin-actions">
+                        <button id="adminUsersBtn" class="btn-secondary">Users</button>
+                        <button id="adminTeamsBtn" class="btn-secondary">Teams</button>
+                    </div>
+                </div>
+                <div id="adminUsers" class="admin-users" style="display:none;"></div>
+                <div id="adminTeams" class="admin-teams" style="display:none;"></div>
             </div>
 
             <!-- Empty State -->

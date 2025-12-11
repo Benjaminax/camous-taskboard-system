@@ -1,6 +1,8 @@
 :root {
     --primary-red: #CC3634;
     --primary-dark-red: #a62b2a;
+    --accent-navy: #0b3d91;
+    --accent-gold: #ffb400;
     --primary-gray: #575656;
     --primary-light-gray: #B2B2B2;
     --bg-color: #f5f5f7;
@@ -374,6 +376,9 @@ body {
 .user-details {
     flex: 1;
     min-width: 0;
+
+.user-role-badge { display:inline-block; padding: 3px 8px; border-radius: 12px; background: #f1c40f; color: #fff; font-weight:600; font-size:12px; margin-left:8px; }
+
 }
 
 .user-details h3 {
@@ -1269,3 +1274,33 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary-gray);
 }
+
+/* Hide leave/delete team buttons by default until state changes */
+#leaveTeamBtn, #deleteTeamBtn {
+    display: none;
+}
+
+.member-role {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.5rem;
+    background: #f1f2f4;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: var(--text-dark);
+}
+.member-role.leader {
+    background: rgba(39, 174, 96, 0.1);
+    color: var(--success-color);
+}
+.member-role.member {
+    background: rgba(52, 152, 219, 0.06);
+    color: var(--info-color);
+}
+
+/* Admin UI */
+.admin-panel { padding: 20px; }
+.admin-user-card, .admin-team-card { display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid #e0e0e0; border-radius:6px; margin-bottom:10px; background:#fff; }
+.admin-user-info { font-size:14px; }
+.admin-user-actions button, .admin-team-actions button { margin-left: 8px; }
+.admin-actions { display:flex; gap:10px; }

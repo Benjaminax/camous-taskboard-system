@@ -30,9 +30,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     email: payload.email,
                     student_id: payload.student_id,
                     full_name: payload.full_name
+                    ,
+                    is_admin: payload.is_admin || false
                 };
                 showDashboard();
                 loadUserTeams();
+                showAdminIfNeeded();
             } else {
                 localStorage.removeItem('token');
                 showAuth();
@@ -69,6 +72,14 @@ function setupEventListeners() {
     // Home button
     const homeBtnEl = document.getElementById('homeBtn');
     if (homeBtnEl) homeBtnEl.addEventListener('click', showHome);
+    // Admin button
+    const adminBtnEl = document.getElementById('adminBtn');
+    if (adminBtnEl) adminBtnEl.addEventListener('click', showAdmin);
+    // Admin panel nav
+    const adminUsersBtn = document.getElementById('adminUsersBtn');
+    if (adminUsersBtn) adminUsersBtn.addEventListener('click', showAdminUsers);
+    const adminTeamsBtn = document.getElementById('adminTeamsBtn');
+    if (adminTeamsBtn) adminTeamsBtn.addEventListener('click', showAdminTeams);
     
     // Team buttons
     document.getElementById('createTeamBtn').addEventListener('click', () => openModal('createTeamModal'));
@@ -80,6 +91,8 @@ function setupEventListeners() {
     
     // Task actions
     document.getElementById('createTaskBtn').addEventListener('click', () => openModal('createTaskModal'));
+    document.getElementById('leaveTeamBtn').addEventListener('click', handleLeaveTeam);
+    document.getElementById('deleteTeamBtn').addEventListener('click', handleDeleteTeam);
     document.getElementById('inviteMemberBtn').addEventListener('click', () => openModal('inviteMemberModal'));
     document.getElementById('manageMembersBtn').addEventListener('click', () => alert('Member management feature coming soon!'));
     document.getElementById('exportTasksBtn').addEventListener('click', () => alert('Export feature coming soon!'));
@@ -173,9 +186,10 @@ async function handleLogin(e) {
         
         if (response.ok) {
             localStorage.setItem('token', data.token);
-            currentUser = data.user;
+            currentUser = { ...data.user, is_admin: data.user.is_admin || false };
             showDashboard();
             loadUserTeams();
+            showAdminIfNeeded();
         } else {
             // Handle specific error messages
             if (data.error && data.error.includes('Invalid credentials')) {
@@ -247,9 +261,10 @@ async function handleRegister(e) {
         
         if (response.ok) {
             localStorage.setItem('token', data.token);
-            currentUser = data.user;
+            currentUser = { ...data.user, is_admin: data.user.is_admin || false };
             showDashboard();
             loadUserTeams();
+            showAdminIfNeeded();
         } else {
             // Handle specific error messages
             if (data.error && data.error.includes('already exists')) {
@@ -280,6 +295,7 @@ function handleLogout() {
         tasks = [];
         allTeams = [];
         showAuth();
+        showAdminIfNeeded();
     }
 }
 
@@ -473,6 +489,8 @@ async function showBrowseTeams() {
     teamDashboard.style.display = 'none';
     emptyState.style.display = 'none';
     browseTeamsSection.style.display = 'block';
+    document.getElementById('homeDashboard').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'none';
     
     await loadAllTeams();
 }
@@ -711,6 +729,7 @@ async function openTeamDashboard(team) {
     
     // Show team dashboard
     teamDashboard.style.display = 'block';
+    document.getElementById('homeDashboard').style.display = 'none';
     
     // Update active team in sidebar
     // clear nav-btn active and then set team item active
@@ -724,6 +743,19 @@ async function openTeamDashboard(team) {
     
     // Load team data
     await loadTeamDashboard();
+    document.getElementById('adminPanel').style.display = 'none';
+    // Show/hide delete/leave buttons depending on whether the current user is the creator
+    const deleteBtn = document.getElementById('deleteTeamBtn');
+    const leaveBtn = document.getElementById('leaveTeamBtn');
+    if (currentUser && currentTeam && deleteBtn && leaveBtn) {
+        if (currentTeam.created_by === currentUser.id || currentUser.is_admin) {
+            deleteBtn.style.display = 'inline-flex';
+            leaveBtn.style.display = 'none';
+        } else {
+            deleteBtn.style.display = 'none';
+            leaveBtn.style.display = 'inline-flex';
+        }
+    }
 }
 
 async function loadTeamDashboard() {
@@ -781,6 +813,13 @@ async function loadTeamMembers() {
             const members = await response.json();
             renderTeamMembers(members);
             updateMemberCount(members.length);
+            // Set team creator display if available
+            const creator = members.find(m => m.is_creator);
+            if (creator) {
+                document.getElementById('teamCreator').textContent = creator.full_name || '';
+            } else {
+                document.getElementById('teamCreator').textContent = '';
+            }
         }
     } catch (error) {
         console.error('Load members error:', error);
@@ -806,8 +845,7 @@ function renderTeamMembers(members) {
             <div class="member-info">
                 <h4>${member.full_name || 'Unknown'}</h4>
                 <p>${member.student_id || 'No ID'}</p>
-                ${member.role ? `<span class="member-role">${member.role}</span>` : ''}
-                ${member.is_creator ? '<span class="member-role">Creator</span>' : ''}
+                ${member.is_creator ? '<span class="member-role leader">Leader</span>' : '<span class="member-role member">Member</span>'}
             </div>
         `;
         membersList.appendChild(memberCard);
@@ -875,42 +913,39 @@ function renderTasks() {
 }
 
 // Task Functions
-async function loadTeamMembersForSelect() {
-    if (!currentTeam) return;
-    
+async function loadAssignableUsers() {
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/${currentTeam.id}/members`);
-        
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/users`);
         if (response.ok) {
-            const members = await response.json();
-            populateAssigneeSelect(members);
+            const users = await response.json();
+            populateAssigneeSelect(users);
         }
     } catch (error) {
-        console.error('Load members for select error:', error);
+        console.error('Load assignable users error:', error);
     }
 }
 
-function populateAssigneeSelect(members) {
+function populateAssigneeSelect(users) {
     const assigneeSelect = document.getElementById('taskAssignee');
-    assigneeSelect.innerHTML = '<option value="">Select a team member</option>';
+    assigneeSelect.innerHTML = '<option value="">Select a user</option>';
     
-    members.forEach(member => {
+    users.forEach(user => {
         const option = document.createElement('option');
-        option.value = member.id;
-        option.textContent = `${member.full_name} (${member.student_id})`;
+        option.value = user.id;
+        option.textContent = `${user.full_name} (${user.student_id})`;
         assigneeSelect.appendChild(option);
     });
 }
 
-async function populateEditAssigneeSelect(members, currentAssignee) {
+async function populateEditAssigneeSelect(users, currentAssignee) {
     const assigneeSelect = document.getElementById('editTaskAssignee');
-    assigneeSelect.innerHTML = '<option value="">Select a team member</option>';
+    assigneeSelect.innerHTML = '<option value="">Select a user</option>';
     
-    members.forEach(member => {
+    users.forEach(user => {
         const option = document.createElement('option');
-        option.value = member.id;
-        option.textContent = `${member.full_name} (${member.student_id})`;
-        if (member.id === currentAssignee) {
+        option.value = user.id;
+        option.textContent = `${user.full_name} (${user.student_id})`;
+        if (user.id === currentAssignee) {
             option.selected = true;
         }
         assigneeSelect.appendChild(option);
@@ -932,7 +967,7 @@ async function handleCreateTask(e) {
     }
     
     if (!assigned_to) {
-        alert('Please assign the task to a team member');
+        alert('Please assign the task to a user');
         return;
     }
     
@@ -942,7 +977,7 @@ async function handleCreateTask(e) {
     }
     
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/tasks`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/tasks`, {
             method: 'POST',
             body: JSON.stringify({
                 title,
@@ -979,15 +1014,15 @@ async function openEditTaskModal(task) {
     document.getElementById('editTaskPriority').value = task.priority || 'Medium';
     document.getElementById('editTaskDueDate').value = task.due_date || '';
     
-    // Load members for assignee select
+    // Load all users for assignee select
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/${currentTeam.id}/members`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/users`);
         if (response.ok) {
-            const members = await response.json();
-            await populateEditAssigneeSelect(members, task.assigned_to);
+            const users = await response.json();
+            await populateEditAssigneeSelect(users, task.assigned_to);
         }
     } catch (error) {
-        console.error('Load members for edit error:', error);
+        console.error('Load users for edit error:', error);
     }
     
     openModal('editTaskModal');
@@ -1010,7 +1045,7 @@ async function handleUpdateTask(e) {
     }
     
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/tasks/${taskId}`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/tasks/${taskId}`, {
             method: 'PUT',
             body: JSON.stringify({
                 title,
@@ -1046,7 +1081,7 @@ async function handleDeleteTask() {
     const taskId = document.getElementById('editTaskId').value;
     
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/tasks/${taskId}`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/tasks/${taskId}`, {
             method: 'DELETE'
         });
         
@@ -1072,6 +1107,10 @@ function showDashboard() {
     if (currentUser) {
         document.getElementById('userName').textContent = currentUser.full_name || 'User';
         document.getElementById('userEmail').textContent = currentUser.email || '';
+        const badge = document.getElementById('userRoleBadge');
+        if (badge) {
+            if (currentUser.is_admin) { badge.style.display = 'inline-block'; badge.textContent = 'Admin'; } else { badge.style.display = 'none'; }
+        }
     }
     
     authSection.style.display = 'none';
@@ -1080,6 +1119,8 @@ function showDashboard() {
     clearActiveNav();
     const homeBtn = document.getElementById('homeBtn');
     if (homeBtn) homeBtn.classList.add('active');
+    document.getElementById('homeDashboard').style.display = 'block';
+    loadHomeDashboard();
 }
 
 function showAuth() {
@@ -1114,7 +1155,7 @@ function openModal(modalId) {
     
     // If opening task modal, load team members for assignee select
     if (modalId === 'createTaskModal') {
-        loadTeamMembersForSelect();
+        loadAssignableUsers();
         // Set due date to 7 days from now
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + 7);
@@ -1188,9 +1229,11 @@ function showHome() {
 
     showDashboard();
     browseTeamsSection.style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'none';
     if (!teams || teams.length === 0) {
         teamDashboard.style.display = 'none';
         emptyState.style.display = 'flex';
+        document.getElementById('homeDashboard').style.display = 'block';
     } else if (currentTeam) {
         // show the current team's dashboard if selected
         teamDashboard.style.display = 'block';
@@ -1199,5 +1242,266 @@ function showHome() {
         // default: show empty state or first team by default
         teamDashboard.style.display = 'none';
         emptyState.style.display = 'flex';
+        document.getElementById('homeDashboard').style.display = 'block';
     }
+    loadHomeDashboard();
+}
+
+// Leave team handler
+async function handleLeaveTeam() {
+    if (!currentTeam) return alert('No team selected');
+    if (!confirm('Are you sure you want to leave this team?')) return;
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/${currentTeam.id}/leave`, {
+            method: 'POST'
+        });
+        const data = await response.json();
+        if (response.ok) {
+            // Remove team from local state and switch to home
+            teams = teams.filter(t => t.id !== currentTeam.id);
+            currentTeam = null;
+            renderTeams();
+            showHome();
+            alert(data.message || 'Left team successfully');
+        } else {
+            alert(data.error || 'Failed to leave team');
+        }
+    } catch (err) {
+        console.error('Leave team error:', err);
+        alert('Network error. Please try again.');
+    }
+}
+
+// Delete team handler
+async function handleDeleteTeam() {
+    if (!currentTeam) return alert('No team selected');
+    if (!confirm('Are you sure you want to delete this team? This cannot be undone.')) return;
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/${currentTeam.id}`, {
+            method: 'DELETE'
+        });
+        const data = await response.json();
+        if (response.ok) {
+            teams = teams.filter(t => t.id !== currentTeam.id);
+            currentTeam = null;
+            renderTeams();
+            showHome();
+            alert(data.message || 'Team deleted successfully');
+        } else {
+            alert(data.error || 'Failed to delete team');
+        }
+    } catch (err) {
+        console.error('Delete team error:', err);
+        alert('Network error. Please try again.');
+    }
+}
+
+async function loadHomeDashboard() {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/user/dashboard`);
+        if (!response.ok) return;
+        const data = await response.json();
+        const statsGrid = document.getElementById('homeStats');
+        if (!statsGrid) return;
+        statsGrid.innerHTML = `
+            <div class="stat-card">
+                <h4>${data.total_teams || 0}</h4>
+                <p>Your Teams</p>
+            </div>
+            <div class="stat-card">
+                <h4>${data.tasks_assigned || 0}</h4>
+                <p>Tasks Assigned to You</p>
+            </div>
+            <div class="stat-card">
+                <h4>${data.total_tasks || 0}</h4>
+                <p>Total Tasks</p>
+            </div>
+        `;
+        // Load recent tasks
+        try {
+            const recentRes = await fetchWithAuth(`${API_BASE_URL}/api/user/tasks`);
+            if (recentRes.ok) {
+                const tasks = await recentRes.json();
+                const recentList = document.getElementById('homeRecentTasks');
+                if (recentList) {
+                    recentList.innerHTML = '<h3>Recent Tasks</h3>' + tasks.map(t => `\
+                        <div class="recent-task-card">\
+                            <h4>${t.title}</h4>\
+                            <p>${t.team_name || 'No team'} - ${t.status || 'No status'}</p>\
+                        </div>`).join('');
+                }
+            }
+        } catch (err) {
+            console.error('Load recent tasks error:', err);
+        }
+    } catch (error) {
+        console.error('Load home dashboard error:', error);
+    }
+}
+
+// Admin functions & UI
+function showAdminIfNeeded() {
+    const adminBtn = document.getElementById('adminBtn');
+    if (!adminBtn) return;
+    if (currentUser && currentUser.is_admin) {
+        adminBtn.style.display = 'block';
+    } else {
+        adminBtn.style.display = 'none';
+    }
+}
+
+function showAdmin() {
+    clearActiveNav();
+    document.getElementById('adminBtn').classList.add('active');
+    document.getElementById('teamDashboard').style.display = 'none';
+    document.getElementById('browseTeamsSection').style.display = 'none';
+    document.getElementById('homeDashboard').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    showAdminUsers();
+}
+
+function showAdminUsers() {
+    document.getElementById('adminUsers').style.display = 'block';
+    document.getElementById('adminTeams').style.display = 'none';
+    loadAdminUsers();
+}
+
+function showAdminTeams() {
+    document.getElementById('adminUsers').style.display = 'none';
+    document.getElementById('adminTeams').style.display = 'block';
+    loadAdminTeams();
+}
+
+async function loadAdminUsers() {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/admin/users`);
+        if (!response.ok) throw new Error('Failed to load users');
+        const users = await response.json();
+        renderAdminUsers(users);
+    } catch (err) {
+        console.error('Admin users load error', err);
+    }
+}
+
+function renderAdminUsers(users) {
+    const el = document.getElementById('adminUsers');
+    el.innerHTML = '';
+    if (!users || users.length === 0) {
+        el.innerHTML = '<div class="no-teams">No users found</div>';
+        return;
+    }
+    users.forEach(user => {
+        const u = document.createElement('div');
+        u.className = 'admin-user-card';
+        u.innerHTML = `
+            <div class="admin-user-info">
+                <strong>${user.full_name}</strong> (${user.student_id})<br>
+                <small>${user.email}</small>
+            </div>
+            <div class="admin-user-actions">
+                <button class="btn-secondary btn-sm" data-id="${user.id}" data-action="toggleAdmin">${user.is_admin ? 'Revoke Admin' : 'Make Admin'}</button>
+                <button class="btn-danger btn-sm" data-id="${user.id}" data-action="deleteUser">Delete</button>
+            </div>
+        `;
+        u.querySelectorAll('button').forEach(b => {
+            b.addEventListener('click', async (ev) => {
+                const action = b.getAttribute('data-action');
+                const id = b.getAttribute('data-id');
+                if (action === 'toggleAdmin') {
+                    await handleAdminUserEdit(id);
+                } else if (action === 'deleteUser') {
+                    await handleAdminUserDelete(id);
+                }
+            });
+        });
+        el.appendChild(u);
+    });
+}
+
+async function handleAdminUserEdit(userId) {
+    try {
+        // Prompt to toggle admin
+        const answer = confirm('Toggle admin status for this user?');
+        if (!answer) return;
+
+        // Get current state of user
+        const resp = await fetchWithAuth(`${API_BASE_URL}/api/admin/users`);
+        const users = await resp.json();
+        const user = users.find(u => +u.id === +userId);
+        if (!user) return alert('User not found');
+
+        const updated = await fetchWithAuth(`${API_BASE_URL}/api/admin/users/${userId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ is_admin: !user.is_admin })
+        });
+        if (!updated.ok) throw new Error('Failed to update user');
+        alert('User updated');
+        loadAdminUsers();
+    } catch (err) {
+        console.error('Admin edit error', err);
+        alert('Failed to update user');
+    }
+}
+
+async function handleAdminUserDelete(userId) {
+    try {
+        const confirmDelete = confirm('Are you sure you want to delete this user? This cannot be undone.');
+        if (!confirmDelete) return;
+        const resp = await fetchWithAuth(`${API_BASE_URL}/api/admin/users/${userId}`, { method: 'DELETE' });
+        if (!resp.ok) throw new Error('Delete failed');
+        alert('User deleted');
+        loadAdminUsers();
+    } catch (err) {
+        console.error('Delete user error', err);
+        alert('Failed to delete user');
+    }
+}
+
+async function loadAdminTeams() {
+    try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/admin/teams`);
+        if (!response.ok) throw new Error('Failed to load teams');
+        const teams = await response.json();
+        renderAdminTeams(teams);
+    } catch (err) {
+        console.error('Admin teams load error', err);
+    }
+}
+
+function renderAdminTeams(teams) {
+    const el = document.getElementById('adminTeams');
+    el.innerHTML = '';
+    if (!teams || teams.length === 0) {
+        el.innerHTML = '<div class="no-teams">No teams found</div>';
+        return;
+    }
+    teams.forEach(team => {
+        const t = document.createElement('div');
+        t.className = 'admin-team-card';
+        t.innerHTML = `
+            <div class="admin-team-info">
+                <strong>${team.team_name}</strong> (Creator: ${team.creator_name || 'n/a'})
+                <div class="muted">Code: ${team.team_code} · Members: ${team.member_count}</div>
+            </div>
+            <div class="admin-team-actions">
+                <button class="btn-danger btn-sm" data-id="${team.id}" data-action="deleteTeam">Delete Team</button>
+            </div>
+        `;
+        t.querySelector('button').addEventListener('click', async (ev) => {
+            const id = ev.target.getAttribute('data-id');
+            const answer = confirm('Delete team and all tasks/members?');
+            if (!answer) return;
+            try {
+                const resp = await fetchWithAuth(`${API_BASE_URL}/api/admin/teams/${id}`, { method: 'DELETE' });
+                if (!resp.ok) throw new Error('Delete failed');
+                alert('Team deleted');
+                loadAdminTeams();
+            } catch (err) {
+                console.error('Delete team error', err);
+                alert('Failed to delete team');
+            }
+        });
+        el.appendChild(t);
+    });
 }

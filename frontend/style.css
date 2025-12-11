@@ -374,6 +374,9 @@ body {
 .user-details {
     flex: 1;
     min-width: 0;
+
+.user-role-badge { display:inline-block; padding: 3px 8px; border-radius: 12px; background: #f1c40f; color: #fff; font-weight:600; font-size:12px; margin-left:8px; }
+
 }
 
 .user-details h3 {
@@ -1263,3 +1266,10 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary-gray);
 }
+
+/* Admin UI */
+.admin-panel { padding: 20px; }
+.admin-user-card, .admin-team-card { display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid #e0e0e0; border-radius:6px; margin-bottom:10px; background:#fff; }
+.admin-user-info { font-size:14px; }
+.admin-user-actions button, .admin-team-actions button { margin-left: 8px; }
+.admin-actions { display:flex; gap:10px; }
