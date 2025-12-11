@@ -40,6 +40,7 @@ body {
     justify-content: center;
     padding: 2rem;
     background: linear-gradient(135deg, #f5f5f7 0%, #e8e8eb 100%);
+    position: relative;
 }
 
 .auth-container {
@@ -50,7 +51,10 @@ body {
     max-width: 450px;
     overflow: hidden;
     border: 1px solid var(--border-color);
-    margin: 0 auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 .auth-header {
