@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://camous-taskboard-system.onrender.com/api';
+const API_BASE_URL = 'https://camous-taskboard-system.onrender.com';
 
 // State
 let currentUser = null;
@@ -44,26 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     setupEventListeners();
-    setupPasswordToggles();
 });
-// Show/hide password toggles
-function setupPasswordToggles() {
-    document.querySelectorAll('.toggle-password').forEach(toggle => {
-        toggle.addEventListener('click', function() {
-            const targetId = this.getAttribute('data-target');
-            const input = document.getElementById(targetId);
-            if (input) {
-                if (input.type === 'password') {
-                    input.type = 'text';
-                    this.innerHTML = '<i class="fas fa-eye-slash"></i>';
-                } else {
-                    input.type = 'password';
-                    this.innerHTML = '<i class="fas fa-eye"></i>';
-                }
-            }
-        });
-    });
-}
 
 // Setup Event Listeners
 function setupEventListeners() {
@@ -103,6 +84,25 @@ function setupEventListeners() {
     document.getElementById('editTaskForm').addEventListener('submit', handleUpdateTask);
     document.getElementById('deleteTaskBtn').addEventListener('click', handleDeleteTask);
     
+    // Password visibility toggle
+    document.querySelectorAll('.toggle-password').forEach(button => {
+        button.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            const icon = this.querySelector('i');
+            
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        });
+    });
+    
     // Close modals
     document.querySelectorAll('.modal .close').forEach(closeBtn => {
         closeBtn.addEventListener('click', () => {
@@ -122,14 +122,31 @@ function setupEventListeners() {
 async function handleLogin(e) {
     e.preventDefault();
     
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value.trim();
+    
+    if (!email || !password) {
+        alert('Please fill in all fields');
+        return;
+    }
+    
+    // Show loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Logging in...';
+    submitBtn.disabled = true;
     
     try {
         const response = await fetch(`${API_BASE_URL}/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password })
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ 
+                email: email, 
+                password: password 
+            })
         });
         
         const data = await response.json();
@@ -140,57 +157,97 @@ async function handleLogin(e) {
             showDashboard();
             loadUserTeams();
         } else {
-            alert(data.error || 'Login failed. Please check your credentials.');
+            // Handle specific error messages
+            if (data.error && data.error.includes('Invalid credentials')) {
+                alert('Invalid email or password. Please try again.');
+            } else if (data.error && data.error.includes('User not found')) {
+                alert('No account found with this email. Please register.');
+                switchTab('register');
+            } else {
+                alert(data.error || 'Login failed. Please try again.');
+            }
         }
     } catch (error) {
         console.error('Login error:', error);
         alert('Network error. Please check your connection and try again.');
+    } finally {
+        // Reset button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
 }
 
 async function handleRegister(e) {
     e.preventDefault();
     
-    const studentId = document.getElementById('regStudentId').value;
-    const fullName = document.getElementById('regFullName').value;
-    const email = document.getElementById('regEmail').value;
-    const password = document.getElementById('regPassword').value;
-    const passwordConfirm = document.getElementById('regPasswordConfirm').value;
-
+    const studentId = document.getElementById('regStudentId').value.trim();
+    const fullName = document.getElementById('regFullName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value.trim();
+    const passwordConfirm = document.getElementById('regPasswordConfirm').value.trim();
+    
+    // Validation
+    if (!studentId || !fullName || !email || !password || !passwordConfirm) {
+        alert('Please fill in all fields');
+        return;
+    }
+    
     if (password.length < 6) {
         alert('Password must be at least 6 characters');
         return;
     }
+    
     if (password !== passwordConfirm) {
         alert('Passwords do not match');
         return;
     }
-
+    
+    // Show loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
+    submitBtn.disabled = true;
+    
     try {
         const response = await fetch(`${API_BASE_URL}/register`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
             body: JSON.stringify({ 
                 student_id: studentId, 
                 full_name: fullName, 
-                email, 
-                password 
+                email: email, 
+                password: password 
             })
         });
-
+        
         const data = await response.json();
-
+        
         if (response.ok) {
             localStorage.setItem('token', data.token);
             currentUser = data.user;
             showDashboard();
             loadUserTeams();
         } else {
-            alert(data.error || 'Registration failed. Please try again.');
+            // Handle specific error messages
+            if (data.error && data.error.includes('already exists')) {
+                alert('An account with this email already exists. Please login instead.');
+                switchTab('login');
+            } else if (data.error && data.error.includes('Invalid email')) {
+                alert('Please enter a valid email address');
+            } else {
+                alert(data.error || 'Registration failed. Please try again.');
+            }
         }
     } catch (error) {
         console.error('Register error:', error);
         alert('Network error. Please check your connection and try again.');
+    } finally {
+        // Reset button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
 }
 
@@ -216,6 +273,13 @@ function switchTab(tab) {
     document.querySelectorAll('.auth-form').forEach(form => {
         form.classList.toggle('active', form.id === `${tab}Form`);
     });
+    
+    // Clear forms when switching tabs
+    if (tab === 'login') {
+        loginForm.reset();
+    } else if (tab === 'register') {
+        registerForm.reset();
+    }
 }
 
 // Team Functions
@@ -227,6 +291,15 @@ async function loadUserTeams() {
             teams = await response.json();
             renderTeams();
             updateEmptyState();
+        } else if (response.status === 404) {
+            // If endpoint doesn't exist, try without /api
+            console.log('Trying alternative endpoint...');
+            const altResponse = await fetchWithAuth(`${API_BASE_URL}/user/teams`);
+            if (altResponse.ok) {
+                teams = await altResponse.json();
+                renderTeams();
+                updateEmptyState();
+            }
         }
     } catch (error) {
         console.error('Load teams error:', error);
@@ -281,7 +354,7 @@ async function handleCreateTeam(e) {
             teams.push(data);
             renderTeams();
             await openTeamDashboard(data);
-            alert('Team created successfully! You have been added as a member.');
+            alert('Team created successfully!');
         } else {
             alert(data.error || 'Failed to create team');
         }
@@ -294,7 +367,7 @@ async function handleCreateTeam(e) {
 async function handleJoinTeam(e) {
     e.preventDefault();
     
-    const teamCode = document.getElementById('teamCodeInput').value.trim();
+    const teamCode = document.getElementById('teamCodeInput').value.trim().toUpperCase();
     
     if (!teamCode) {
         alert('Please enter a team code');
