@@ -46,8 +46,34 @@ let currentTeam = null;
 let teams = [];
 let tasks = [];
 
+// Initialize Analytics
+function initializeAnalytics() {
+    // Check if Mixpanel is available
+    if (typeof mixpanel !== 'undefined') {
+        // Set a project token - can be configured via environment variable or localStorage
+        const token = localStorage.getItem('MIXPANEL_TOKEN') || 'MIXPANEL_TOKEN_PLACEHOLDER';
+        if (token !== 'MIXPANEL_TOKEN_PLACEHOLDER' && !window.mixpanelInitialized) {
+            mixpanel.init(token, { debug: true });
+            window.mixpanelInitialized = true;
+        }
+    }
+}
+
+// Track analytics event
+function trackAnalytics(eventName, properties = {}) {
+    if (typeof mixpanel !== 'undefined' && window.mixpanelInitialized) {
+        mixpanel.track(eventName, {
+            ...properties,
+            timestamp: new Date().toISOString(),
+            user_id: currentUser?.id
+        });
+    }
+}
+
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
+    initializeAnalytics();
+    
     // Check for stored token
     const token = localStorage.getItem('token');
     if (token) {
@@ -214,14 +240,34 @@ async function handleLogin(e) {
         if (response.ok) {
             localStorage.setItem('token', data.token);
             currentUser = data.user;
+            
+            // Track login event with Mixpanel
+            trackAnalytics('User Login', {
+                email: email,
+                student_id: data.user.student_id
+            });
+            
+            // Set user properties for Mixpanel
+            if (typeof mixpanel !== 'undefined' && window.mixpanelInitialized) {
+                mixpanel.identify(data.user.id);
+                mixpanel.people.set({
+                    "$name": data.user.full_name,
+                    "$email": data.user.email,
+                    "student_id": data.user.student_id
+                });
+            }
+            
             showDashboard();
             loadUserTeams();
         } else {
             alert(data.error || 'Login failed');
+            // Track failed login
+            trackAnalytics('Login Failed', { email: email });
         }
     } catch (error) {
         console.error('Login error:', error);
         alert('Network error. Please check your connection and try again.');
+        trackAnalytics('Login Error', { error: error.message });
     }
 }
 
@@ -247,19 +293,34 @@ async function handleRegister(e) {
         const data = await response.json();
         
         if (response.ok) {
+            // Track registration event
+            trackAnalytics('User Registration', {
+                email: email,
+                student_id: studentId,
+                full_name: fullName
+            });
+            
             alert('Registration successful! Please login.');
             switchTab('login');
             e.target.reset();
         } else {
             alert(data.error || 'Registration failed');
+            trackAnalytics('Registration Failed', { email: email });
         }
     } catch (error) {
         console.error('Register error:', error);
         alert('Network error. Please check your connection and try again.');
+        trackAnalytics('Registration Error', { error: error.message });
     }
 }
 
 function handleLogout() {
+    // Track logout event
+    trackAnalytics('User Logout', {
+        user_id: currentUser?.id,
+        email: currentUser?.email
+    });
+    
     localStorage.removeItem('token');
     currentUser = null;
     currentTeam = null;
@@ -321,6 +382,12 @@ async function handleCreateTeam(e) {
         const data = await response.json();
         
         if (response.ok) {
+            // Track team creation
+            trackAnalytics('Team Created', {
+                team_name: teamName,
+                team_id: data.id
+            });
+            
             closeModal('createTeamModal');
             e.target.reset();
             teams.push(data);
@@ -328,10 +395,12 @@ async function handleCreateTeam(e) {
             alert('Team created successfully!');
         } else {
             alert(data.error || 'Failed to create team');
+            trackAnalytics('Team Creation Failed', { team_name: teamName });
         }
     } catch (error) {
         console.error('Create team error:', error);
         alert('Network error. Please try again.');
+        trackAnalytics('Team Creation Error', { error: error.message });
     }
 }
 
@@ -536,6 +605,15 @@ async function handleCreateTask(e) {
         const data = await response.json();
         
         if (response.ok) {
+            // Track task creation
+            trackAnalytics('Task Created', {
+                task_title: title,
+                task_id: data.id,
+                team_id: currentTeam.id,
+                priority: priority,
+                status: data.status
+            });
+            
             closeModal('createTaskModal');
             e.target.reset();
             await loadTeamTasks();
@@ -543,10 +621,12 @@ async function handleCreateTask(e) {
             alert('Task created successfully!');
         } else {
             alert(data.error || 'Failed to create task');
+            trackAnalytics('Task Creation Failed', { task_title: title });
         }
     } catch (error) {
         console.error('Create task error:', error);
         alert('Network error. Please try again.');
+        trackAnalytics('Task Creation Error', { error: error.message });
     }
 }
 
@@ -590,6 +670,14 @@ async function handleUpdateTask(e) {
         const data = await response.json();
         
         if (response.ok) {
+            // Track task update
+            trackAnalytics('Task Updated', {
+                task_title: title,
+                task_id: taskId,
+                status: status,
+                priority: priority
+            });
+            
             closeModal('editTaskModal');
             await loadTeamTasks();
             await loadTeamStats();
@@ -619,6 +707,11 @@ async function handleDeleteTask() {
         const data = await response.json();
         
         if (response.ok) {
+            // Track task deletion
+            trackAnalytics('Task Deleted', {
+                task_id: taskId
+            });
+            
             closeModal('editTaskModal');
             await loadTeamTasks();
             await loadTeamStats();
