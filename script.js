@@ -72,8 +72,16 @@ function trackAnalytics(eventName, properties = {}) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    initializeAnalytics();
+    // First, ensure auth section is visible and dashboard is hidden
+    const authSection = document.getElementById('authSection');
+    const dashboard = document.getElementById('dashboard');
+    const sidebar = document.getElementById('sidebar');
     
+    authSection.style.display = 'block';
+    dashboard.style.display = 'none';
+    sidebar.style.display = 'none';
+    
+    initializeAnalytics();
     setupEventListeners();
     setupSidebarListeners();
     
@@ -87,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
             fetchUserData(token);
         } catch (error) {
             // Token is invalid, clear it and show auth
+            console.error('Invalid token:', error);
             localStorage.removeItem('token');
             showAuth();
         }
