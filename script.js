@@ -303,7 +303,7 @@ function switchTab(tab) {
 // Team Functions
 async function loadUserTeams() {
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/user/teams`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/user/teams`);
         
         if (response.ok) {
             teams = await response.json();
@@ -352,7 +352,7 @@ async function handleCreateTeam(e) {
     }
     
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/teams`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams`, {
             method: 'POST',
             body: JSON.stringify({ 
                 team_name: teamName,
@@ -397,7 +397,7 @@ async function handleJoinTeam(e) {
     }
     
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/teams/join`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/join`, {
             method: 'POST',
             body: JSON.stringify({ team_code: teamCode })
         });
@@ -441,7 +441,7 @@ async function handleInviteMember(e) {
     }
     
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${currentTeam.id}/invite`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/${currentTeam.id}/invite`, {
             method: 'POST',
             body: JSON.stringify({ 
                 email: email,
@@ -475,7 +475,7 @@ async function showBrowseTeams() {
 
 async function loadAllTeams() {
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/teams/all`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/all`);
         
         if (response.ok) {
             allTeams = await response.json();
@@ -590,7 +590,7 @@ function renderFilteredTeams(filteredTeams) {
 
 async function loadAvailableTeams() {
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/teams/all`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/all`);
         
         if (response.ok) {
             const availableTeams = await response.json();
@@ -669,7 +669,7 @@ async function handleRequestJoin(e) {
     }
     
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${teamId}/request-join`, {
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/${teamId}/request-join`, {
             method: 'POST',
             body: JSON.stringify({
                 requested_role: requestedRole,
@@ -736,7 +736,7 @@ async function loadTeamDashboard() {
 
 async function loadTeamStats() {
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${currentTeam.id}/dashboard`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/${currentTeam.id}/dashboard`);
         
         if (response.ok) {
             const data = await response.json();
@@ -771,7 +771,7 @@ function renderTeamStats(stats) {
 
 async function loadTeamMembers() {
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${currentTeam.id}/members`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/${currentTeam.id}/members`);
         
         if (response.ok) {
             const members = await response.json();
@@ -815,8 +815,8 @@ async function loadTeamTasks() {
     
     try {
         const url = status === 'all' 
-            ? `${API_BASE_URL}/teams/${currentTeam.id}/tasks`
-            : `${API_BASE_URL}/teams/${currentTeam.id}/tasks?status=${status}`;
+            ? `${API_BASE_URL}/api/teams/${currentTeam.id}/tasks`
+            : `${API_BASE_URL}/api/teams/${currentTeam.id}/tasks?status=${status}`;
         
         const response = await fetchWithAuth(url);
         
@@ -875,7 +875,7 @@ async function loadTeamMembersForSelect() {
     if (!currentTeam) return;
     
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${currentTeam.id}/members`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/${currentTeam.id}/members`);
         
         if (response.ok) {
             const members = await response.json();
@@ -977,7 +977,7 @@ async function openEditTaskModal(task) {
     
     // Load members for assignee select
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/teams/${currentTeam.id}/members`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/teams/${currentTeam.id}/members`);
         if (response.ok) {
             const members = await response.json();
             await populateEditAssigneeSelect(members, task.assigned_to);
