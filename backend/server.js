@@ -140,13 +140,15 @@ app.post('/api/login', async (req, res) => {
 // Create team
 app.post('/api/teams', authenticateToken, async (req, res) => {
     try {
-        const { team_name } = req.body;
+        console.log('API: Create team payload', req.body, 'by user', req.user?.id);
+        const { team_name, description = null, max_members = null } = req.body;
         const team_code = generateTeamCode();
         
         const result = await pool.query(
-            'INSERT INTO teams (team_name, team_code, created_by) VALUES ($1, $2, $3) RETURNING *',
-            [team_name, team_code, req.user.id]
+            'INSERT INTO teams (team_name, team_code, created_by, description, max_members) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+            [team_name, team_code, req.user.id, description, max_members]
         );
+        console.log('API: Team created successfully', result.rows[0]);
         
         // Add creator as team member
         await pool.query(
@@ -156,6 +158,18 @@ app.post('/api/teams', authenticateToken, async (req, res) => {
         
         res.status(201).json(result.rows[0]);
     } catch (error) {
+        console.error('API: Error creating team:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Get all teams (for browsing)
+app.get('/api/teams/all', authenticateToken, async (req, res) => {
+    try {
+        const result = await pool.query('SELECT * FROM teams ORDER BY id DESC');
+        res.json(result.rows);
+    } catch (error) {
+        console.error('API: Error fetching all teams:', error);
         res.status(500).json({ error: error.message });
     }
 });
@@ -367,6 +381,11 @@ function generateTeamCode() {
 // Test endpoint
 app.get('/api/test', (req, res) => {
     res.json({ message: 'Campus Taskboard API is running!' });
+});
+
+// Fallback for 404 to return JSON instead of HTML
+app.use((req, res) => {
+    res.status(404).json({ error: 'Not found' });
 });
 
 // Start server

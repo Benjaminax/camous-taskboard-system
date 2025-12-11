@@ -66,6 +66,9 @@ function setupEventListeners() {
     
     // Logout
     document.getElementById('logoutBtn').addEventListener('click', handleLogout);
+    // Home button
+    const homeBtnEl = document.getElementById('homeBtn');
+    if (homeBtnEl) homeBtnEl.addEventListener('click', showHome);
     
     // Team buttons
     document.getElementById('createTeamBtn').addEventListener('click', () => openModal('createTeamModal'));
@@ -344,7 +347,8 @@ async function handleCreateTeam(e) {
     
     const teamName = document.getElementById('teamNameInput').value.trim();
     const description = document.getElementById('teamDescription').value.trim();
-    const maxMembers = document.getElementById('teamMaxMembers').value;
+    const maxMembersValue = document.getElementById('teamMaxMembers').value;
+    const maxMembers = maxMembersValue !== '' ? parseInt(maxMembersValue, 10) : null;
     
     if (!teamName) {
         alert('Please enter a team name');
@@ -708,10 +712,9 @@ async function openTeamDashboard(team) {
     // Show team dashboard
     teamDashboard.style.display = 'block';
     
-    // Update active team in sidebar
-    document.querySelectorAll('.team-nav-item').forEach(item => {
-        item.classList.remove('active');
-    });
+    // clear home nav and mark team item active
+    clearActiveNav();
+    document.querySelectorAll('.team-nav-item').forEach(item => item.classList.remove('active'));
     document.querySelectorAll('.team-nav-item').forEach(item => {
         if (item.querySelector('span')?.textContent === team.team_name) {
             item.classList.add('active');
@@ -1072,6 +1075,10 @@ function showDashboard() {
     
     authSection.style.display = 'none';
     dashboard.style.display = 'flex';
+    // make Home button active by default
+    clearActiveNav();
+    const homeBtn = document.getElementById('homeBtn');
+    if (homeBtn) homeBtn.classList.add('active');
 }
 
 function showAuth() {
@@ -1165,4 +1172,28 @@ function formatDate(dateString) {
         month: 'short',
         year: 'numeric'
     });
+}
+
+// Show/hide Home view (dashboard) - frontend
+function clearActiveNav() {
+    document.querySelectorAll('.nav-btn, .team-nav-item').forEach(el => el.classList.remove('active'));
+}
+
+function showHome() {
+    clearActiveNav();
+    const homeBtn = document.getElementById('homeBtn');
+    if (homeBtn) homeBtn.classList.add('active');
+
+    showDashboard();
+    browseTeamsSection.style.display = 'none';
+    if (!teams || teams.length === 0) {
+        teamDashboard.style.display = 'none';
+        emptyState.style.display = 'flex';
+    } else if (currentTeam) {
+        teamDashboard.style.display = 'block';
+        emptyState.style.display = 'none';
+    } else {
+        teamDashboard.style.display = 'none';
+        emptyState.style.display = 'flex';
+    }
 }

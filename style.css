@@ -435,6 +435,12 @@ body {
     color: var(--primary-red);
 }
 
+.nav-btn.active {
+    background: rgba(204, 54, 52, 0.06);
+    color: var(--primary-red);
+    border-left: 3px solid rgba(204, 54, 52, 0.2);
+}
+
 .nav-btn i {
     width: 20px;
     text-align: center;
