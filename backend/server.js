@@ -217,10 +217,29 @@ app.put('/api/teams/:id', authenticateToken, async (req, res) => {
             return res.status(403).json({ error: 'Only the team creator can edit the team' });
         }
         
-        const result = await pool.query(
-            'UPDATE teams SET team_name = $1, description = $2, max_members = $3 WHERE id = $4 RETURNING *',
-            [team_name, description, max_members, id]
-        );
+        // Check which columns exist
+        const descExists = await pool.query("SELECT 1 FROM information_schema.columns WHERE table_name = 'teams' AND column_name = 'description'");
+        const maxExists = await pool.query("SELECT 1 FROM information_schema.columns WHERE table_name = 'teams' AND column_name = 'max_members'");
+        
+        let query = 'UPDATE teams SET team_name = $1';
+        let params = [team_name];
+        let paramIndex = 2;
+        
+        if (descExists.rows.length > 0) {
+            query += `, description = $${paramIndex}`;
+            params.push(description);
+            paramIndex++;
+        }
+        if (maxExists.rows.length > 0) {
+            query += `, max_members = $${paramIndex}`;
+            params.push(max_members);
+            paramIndex++;
+        }
+        
+        query += ` WHERE id = $${paramIndex} RETURNING *`;
+        params.push(id);
+        
+        const result = await pool.query(query, params);
         
         res.json(result.rows[0]);
     } catch (error) {
