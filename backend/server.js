@@ -434,19 +434,25 @@ app.get('/api/teams/:teamId/dashboard', authenticateToken, async (req, res) => {
         );
         
 
-        const requestsResult = await pool.query(
-            `SELECT jr.id, jr.requested_at, u.full_name, u.student_id, u.email
-             FROM join_requests jr
-             JOIN users u ON jr.user_id = u.id
-             WHERE jr.team_id = $1 AND jr.status = 'pending'
-             ORDER BY jr.requested_at DESC`,
-            [teamId]
-        );
+        let joinRequests = [];
+        try {
+            const requestsResult = await pool.query(
+                `SELECT jr.id, jr.requested_at, u.full_name, u.student_id, u.email
+                 FROM join_requests jr
+                 JOIN users u ON jr.user_id = u.id
+                 WHERE jr.team_id = $1 AND jr.status = 'pending'
+                 ORDER BY jr.requested_at DESC`,
+                [teamId]
+            );
+            joinRequests = requestsResult.rows;
+        } catch (err) {
+            console.warn('join_requests table may not exist:', err.message);
+        }
         
         res.json({
             members: membersResult.rows,
             summary: summaryResult.rows[0],
-            join_requests: requestsResult.rows
+            join_requests: joinRequests
         });
     } catch (error) {
         res.status(500).json({ error: error.message });
@@ -624,7 +630,7 @@ app.get('/api/user/tasks', authenticateToken, async (req, res) => {
     try {
         const userId = req.user.id;
         const result = await pool.query(
-            `SELECT t.*, tm.team_id, teams.team_name as team_name, u.full_name as assigned_name
+            `SELECT t.*, teams.team_name as team_name, u.full_name as assigned_name
              FROM tasks t
              LEFT JOIN users u ON t.assigned_to = u.id
              LEFT JOIN teams ON t.team_id = teams.id
