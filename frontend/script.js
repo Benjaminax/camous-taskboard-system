@@ -106,6 +106,27 @@ function setupEventListeners() {
     
     document.getElementById('closeTeamCodeBtn').addEventListener('click', () => closeModal('teamCodeModal'));
     
+    // Mobile menu toggle
+    const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+    if (mobileMenuBtn) {
+        mobileMenuBtn.addEventListener('click', toggleSidebar);
+    }
+    
+    // Close sidebar when clicking outside on mobile
+    document.addEventListener('click', (e) => {
+        const sidebar = document.querySelector('.sidebar');
+        const overlay = document.querySelector('.sidebar-overlay');
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        if (window.innerWidth <= 768 && 
+            !sidebar.contains(e.target) && 
+            e.target !== mobileMenuBtn && 
+            !mobileMenuBtn.contains(e.target) &&
+            sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        }
+    });
+    
     document.querySelectorAll('.toggle-password').forEach(button => {
         button.addEventListener('click', function() {
             const targetId = this.getAttribute('data-target');
@@ -1182,6 +1203,13 @@ async function handleDeleteTask() {
         console.error('Delete task error:', error);
         alert('Network error. Please try again.');
     }
+}
+
+function toggleSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const overlay = document.querySelector('.sidebar-overlay');
+    sidebar.classList.toggle('active');
+    overlay.classList.toggle('active');
 }
 
 function showDashboard() {

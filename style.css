@@ -534,6 +534,44 @@ body {
     margin-left: var(--sidebar-width);
 }
 
+/* Mobile Menu Button */
+.mobile-menu-btn {
+    display: none;
+    position: fixed;
+    top: 1rem;
+    left: 1rem;
+    z-index: 1001;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.8rem;
+    cursor: pointer;
+    box-shadow: var(--shadow-sm);
+    transition: all 0.3s ease;
+}
+
+.mobile-menu-btn:hover {
+    background: var(--bg-color);
+    border-color: var(--primary-red);
+}
+
+.mobile-menu-btn i {
+    font-size: 1.2rem;
+    color: var(--text-dark);
+}
+
+/* Mobile Sidebar Overlay */
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+}
+
 /* Team Dashboard */
 .team-dashboard {
     animation: fadeIn 0.3s ease;
@@ -1076,6 +1114,7 @@ body {
     overflow-y: auto;
     box-shadow: var(--shadow-lg);
     animation: modalSlideIn 0.3s ease;
+    margin: auto;
 }
 
 @keyframes modalSlideIn {
@@ -1229,6 +1268,22 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+    .mobile-menu-btn {
+        display: block;
+    }
+    
+    .sidebar-overlay {
+        display: block;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+    }
+    
+    .sidebar-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+    }
+    
     .sidebar {
         position: fixed;
         left: -100%;
@@ -1258,12 +1313,19 @@ body {
         width: 100%;
     }
     
+    .header-actions button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
     .empty-actions {
         flex-direction: column;
     }
     
     .modal-content {
         padding: 1.5rem;
+        max-width: 95vw;
+        margin: 1rem auto;
     }
     
     .form-row {
@@ -1272,6 +1334,15 @@ body {
     
     .teams-grid {
         grid-template-columns: 1fr;
+    }
+    
+    .content-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     }
 }
 
@@ -1282,6 +1353,10 @@ body {
     
     .auth-header {
         padding: 1.5rem 1rem;
+    }
+    
+    .auth-header .logo h1 {
+        font-size: 1.5rem;
     }
     
     .auth-forms {
@@ -1298,6 +1373,29 @@ body {
     
     .empty-actions {
         flex-direction: column;
+    }
+    
+    .empty-actions button {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .btn-primary, .btn-secondary, .btn-danger {
+        font-size: 0.9rem;
+        padding: 0.8rem 1.5rem;
+    }
+    
+    .main-content {
+        padding: 0.5rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .team-info {
+        flex-direction: column;
+        gap: 0.5rem;
     }
 }
 
