@@ -1200,7 +1200,7 @@ function showDashboard() {
     document.getElementById('adminPanel').style.display = 'none';
     document.getElementById('emptyState').style.display = 'none';
     
-    authSection.style.display = 'none';
+    authSection.classList.add('hidden');
     dashboard.style.display = 'flex';
     clearActiveNav();
     const homeBtn = document.getElementById('homeBtn');
@@ -1210,7 +1210,7 @@ function showDashboard() {
 }
 
 function showAuth() {
-    authSection.style.display = 'block';
+    authSection.classList.remove('hidden');
     dashboard.style.display = 'none';
     
     loginForm.reset();

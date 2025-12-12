@@ -60,6 +60,11 @@ body {
     z-index: 9999 !important;
 }
 
+/* Hidden class to override !important display declarations */
+.hidden {
+    display: none !important;
+}
+
 .auth-container {
     background: var(--card-bg) !important;
     border-radius: 20px !important;
