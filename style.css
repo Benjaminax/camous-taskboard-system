@@ -330,7 +330,7 @@ body {
 
 /* Dashboard */
 .dashboard {
-    display: flex;
+    display: none;
     min-height: 100vh;
 }
 

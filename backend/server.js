@@ -15,13 +15,11 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
-console.log('CORS middleware configured');
-
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+
 app.use((req, res, next) => {
-    console.log(`Incoming request: ${req.method} ${req.path} from ${req.ip}`);
     res.set('Connection', 'keep-alive');
     res.set('Keep-Alive', 'timeout=5, max=100');
     next();
@@ -30,11 +28,6 @@ app.use((req, res, next) => {
 
 let pool;
 try {
-    console.log('=== DATABASE CONNECTION SETUP ===');
-    console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
-    console.log('DATABASE_URL length:', process.env.DATABASE_URL ? process.env.DATABASE_URL.length : 0);
-    console.log('NODE_ENV:', process.env.NODE_ENV);
-
     pool = new Pool({
         connectionString: process.env.DATABASE_URL,
         ssl: {
@@ -45,21 +38,14 @@ try {
     pool.query('SELECT 1', (err) => {
         if (err) {
             console.error('Database connection test failed:', err.message);
-            console.error('Error details:', err);
         } else {
             console.log('Database connection test succeeded');
-            // Initialize database tables
-            initializeDatabase().then(() => {
-                // Add missing columns if they don't exist
-                addMissingColumns();
-                // Create test user if it doesn't exist
-                createTestUser();
-            });
+            // Add missing columns if they don't exist
+            addMissingColumns();
         }
     });
 } catch (err) {
     console.error('Error creating database pool:', err.message);
-    console.error('Error details:', err);
 }
 
 
@@ -82,126 +68,6 @@ async function addMissingColumns() {
         }
     } catch (error) {
         console.error('Error adding missing columns:', error);
-    }
-}
-
-async function createTestUser() {
-    try {
-        console.log('=== TEST USER CREATION START ===');
-        console.log('Checking for test user...');
-
-        // Check if test user already exists
-        const userCheck = await pool.query("SELECT 1 FROM users WHERE email = $1", ['student001@academiccity.edu']);
-        console.log('Test user check result - rows found:', userCheck.rows.length);
-
-        if (userCheck.rows.length > 0) {
-            console.log('Test user already exists - skipping creation');
-            console.log('=== TEST USER CREATION END ===');
-            return;
-        }
-
-        console.log('Test user not found - creating new test user...');
-        // Create test user
-        const passwordHash = await bcrypt.hash('password123', 10);
-        console.log('Password hash created successfully');
-
-        const insertResult = await pool.query(
-            'INSERT INTO users (student_id, full_name, email, password_hash) VALUES ($1, $2, $3, $4)',
-            ['STU001', 'Test Student', 'student001@academiccity.edu', passwordHash]
-        );
-
-        console.log('Test user creation SQL executed, result:', insertResult);
-        console.log('Created test user: student001@academiccity.edu with password: password123');
-        console.log('=== TEST USER CREATION END ===');
-    } catch (error) {
-        console.error('=== TEST USER CREATION ERROR ===');
-        console.error('Error creating test user:', error);
-        console.error('Error details:', error.message);
-        console.error('=== TEST USER CREATION ERROR END ===');
-    }
-}
-
-async function initializeDatabase() {
-    try {
-        console.log('=== DATABASE INITIALIZATION START ===');
-
-        // Create users table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS users (
-                id SERIAL PRIMARY KEY,
-                student_id VARCHAR(50) UNIQUE NOT NULL,
-                full_name VARCHAR(255) NOT NULL,
-                email VARCHAR(255) UNIQUE NOT NULL,
-                password_hash VARCHAR(255) NOT NULL,
-                is_admin BOOLEAN DEFAULT FALSE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        console.log('Users table created or already exists');
-
-        // Create teams table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS teams (
-                id SERIAL PRIMARY KEY,
-                team_name VARCHAR(255) NOT NULL,
-                description TEXT,
-                max_members INTEGER DEFAULT 10,
-                team_code VARCHAR(10) UNIQUE NOT NULL,
-                created_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        console.log('Teams table created or already exists');
-
-        // Create team_members table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS team_members (
-                team_id INTEGER REFERENCES teams(id) ON DELETE CASCADE,
-                user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                PRIMARY KEY (team_id, user_id)
-            )
-        `);
-        console.log('Team_members table created or already exists');
-
-        // Create tasks table
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS tasks (
-                id SERIAL PRIMARY KEY,
-                team_id INTEGER REFERENCES teams(id) ON DELETE CASCADE,
-                title VARCHAR(255) NOT NULL,
-                description TEXT,
-                status VARCHAR(50) DEFAULT 'todo',
-                priority VARCHAR(20) DEFAULT 'medium',
-                assigned_to INTEGER REFERENCES users(id) ON DELETE SET NULL,
-                created_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
-                due_date DATE,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            )
-        `);
-        console.log('Tasks table created or already exists');
-
-        // Create indexes
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)`);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_users_student_id ON users(student_id)`);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_teams_team_code ON teams(team_code)`);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_teams_created_by ON teams(created_by)`);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_team_members_team_id ON team_members(team_id)`);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_team_members_user_id ON team_members(user_id)`);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_tasks_team_id ON tasks(team_id)`);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_tasks_assigned_to ON tasks(assigned_to)`);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_tasks_created_by ON tasks(created_by)`);
-        await pool.query(`CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)`);
-
-        console.log('Database indexes created');
-        console.log('=== DATABASE INITIALIZATION COMPLETE ===');
-
-    } catch (error) {
-        console.error('=== DATABASE INITIALIZATION ERROR ===');
-        console.error('Error initializing database:', error);
-        console.error('Error details:', error.message);
-        console.error('=== DATABASE INITIALIZATION ERROR END ===');
     }
 }
 
@@ -282,61 +148,31 @@ app.post('/api/register', async (req, res) => {
 
 app.post('/api/login', async (req, res) => {
     try {
-        console.log('=== LOGIN ATTEMPT START ===');
-        console.log('Request method:', req.method);
-        console.log('Request headers:', JSON.stringify(req.headers, null, 2));
-        console.log('Request body:', req.body);
-        console.log('Environment check - DATABASE_URL exists:', !!process.env.DATABASE_URL);
-        console.log('Environment check - JWT_SECRET exists:', !!process.env.JWT_SECRET);
-
         const { email, password } = req.body;
-
-        if (!email || !password) {
-            console.log('Missing email or password');
-            return res.status(400).json({ error: 'Email and password are required' });
-        }
-
-        console.log('Attempting database query for email:', email);
-
+        
         const result = await pool.query(
             'SELECT * FROM users WHERE email = $1',
             [email]
         );
-
-        console.log('Database query completed. Rows found:', result.rows.length);
-
+        
         if (result.rows.length === 0) {
-            console.log('No user found with email:', email);
             return res.status(400).json({ error: 'Invalid credentials' });
         }
-
+        
         const user = result.rows[0];
-        console.log('User found:', { id: user.id, email: user.email, student_id: user.student_id });
-
-        console.log('Attempting password validation...');
         const validPassword = await bcrypt.compare(password, user.password_hash);
-        console.log('Password validation result:', validPassword);
-
+        
         if (!validPassword) {
-            console.log('Invalid password for user:', user.email);
             return res.status(400).json({ error: 'Invalid credentials' });
         }
+        
 
-        console.log('Password valid, creating token...');
-        const tokenPayload = {
-            id: user.id,
-            email: user.email,
-            student_id: user.student_id,
-            full_name: user.full_name
-        };
-        if (typeof user.is_admin !== 'undefined') {
-            tokenPayload.is_admin = user.is_admin;
-        }
+        const tokenPayload = { id: user.id, email: user.email, student_id: user.student_id, full_name: user.full_name };
+        if (typeof user.is_admin !== 'undefined') tokenPayload.is_admin = user.is_admin;
 
         const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: '24h' });
-        console.log('Token created successfully');
-
-        const responseData = {
+        
+        res.json({
             token,
             user: {
                 id: user.id,
@@ -345,19 +181,8 @@ app.post('/api/login', async (req, res) => {
                 email: user.email,
                 is_admin: user.is_admin || false
             }
-        };
-
-        console.log('Login successful for user:', user.email);
-        console.log('Response data:', JSON.stringify(responseData, null, 2));
-        console.log('=== LOGIN ATTEMPT END ===');
-
-        res.json(responseData);
+        });
     } catch (error) {
-        console.error('=== LOGIN ERROR ===');
-        console.error('Error details:', error);
-        console.error('Error stack:', error.stack);
-        console.error('Error message:', error.message);
-        console.error('=== LOGIN ERROR END ===');
         res.status(500).json({ error: error.message });
     }
 });
@@ -952,12 +777,6 @@ app.use((req, res) => {
 
 
 app.listen(PORT, () => {
-    console.log('=== SERVER STARTUP ===');
     console.log(`Server running on port ${PORT}`);
-    console.log('Environment:', process.env.NODE_ENV || 'development');
-    console.log('Database configured:', !!pool);
-    console.log('JWT_SECRET configured:', !!process.env.JWT_SECRET);
-    console.log('Ready to accept connections');
-    console.log('=== SERVER STARTUP COMPLETE ===');
 });
 
