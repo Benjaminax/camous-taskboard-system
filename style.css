@@ -73,7 +73,7 @@ body {
     max-width: 450px;
     overflow: hidden;
     border: 1px solid var(--border-color);
-    margin: 0 auto !important;
+    margin: 0 auto;
 }
 
 .auth-header {
@@ -198,7 +198,7 @@ body {
 }
 
 .password-wrapper input {
-    padding-right: 45px !important;
+    padding-right: 45px;
 }
 
 .toggle-password {
@@ -518,12 +518,12 @@ body {
 }
 
 .logout-btn {
-    color: #e74c3c !important;
+    color: #e74c3c;
     width: 100%;
 }
 
 .logout-btn:hover {
-    background: rgba(231, 76, 60, 0.1) !important;
+    background: rgba(231, 76, 60, 0.1);
 }
 
 /* Main Content */
@@ -830,8 +830,8 @@ body {
 }
 
 .join-request-badge {
-    background: #4a90e2 !important;
-    color: white !important;
+    background: #4a90e2;
+    color: white;
 }
 
 .task-header {
