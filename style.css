@@ -45,7 +45,7 @@ body {
 /* Auth Section - Centered */
 .auth-section {
     min-height: 100vh !important;
-    display: flex !important;
+    display: flex;
     align-items: center !important;
     justify-content: center !important;
     padding: 2rem !important;

@@ -1222,8 +1222,9 @@ function showDashboard() {
     document.getElementById('adminPanel').style.display = 'none';
     document.getElementById('emptyState').style.display = 'none';
     
-    authSection.classList.add('hidden');
-    dashboard.style.display = 'flex';
+    authSection.style.display = 'none'; // Hide auth section
+    dashboard.style.display = ''; // Remove inline style
+    dashboard.style.display = 'flex'; // Show dashboard
     clearActiveNav();
     const homeBtn = document.getElementById('homeBtn');
     if (homeBtn) homeBtn.classList.add('active');
@@ -1234,8 +1235,8 @@ function showDashboard() {
 }
 
 function showAuth() {
-    authSection.classList.remove('hidden');
-    dashboard.style.display = 'none';
+    authSection.style.display = 'flex'; // Show auth section
+    dashboard.style.display = 'none'; // Hide dashboard
     
     loginForm.reset();
     registerForm.reset();
