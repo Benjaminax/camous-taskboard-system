@@ -1486,20 +1486,20 @@ async function loadHomeDashboard() {
                     </div>
                 </div>
                 <div class="analytics-card">
-                    <h3><i class="fas fa-trophy"></i> Performance Metrics</h3>
+                    <h3><i class="fas fa-trophy"></i> Task Priority Distribution</h3>
                     <div class="bar-chart">
                         <div class="bar-container">
                             ${createBarChart([
-                                { value: analytics.productivityScore, label: 'Productivity Score', class: 'productivity' },
-                                { value: analytics.efficiency, label: 'Efficiency Rate', class: 'efficiency', unit: '%' },
-                                { value: analytics.onTimeCompletion, label: 'On-Time Rate', class: 'on-time', unit: '%' }
-                            ], 100)}
+                                { value: analytics.highPriority, label: 'High Priority', class: 'high-priority' },
+                                { value: analytics.mediumPriority, label: 'Medium Priority', class: 'medium-priority' },
+                                { value: analytics.lowPriority, label: 'Low Priority', class: 'low-priority' }
+                            ], Math.max(analytics.highPriority, analytics.mediumPriority, analytics.lowPriority, 1))}
                         </div>
                         <div class="bar-chart-legend">
                             ${createBarChartLegend([
-                                { label: 'Productivity Score', class: 'productivity' },
-                                { label: 'Efficiency Rate', class: 'efficiency' },
-                                { label: 'On-Time Rate', class: 'on-time' }
+                                { label: 'High Priority', class: 'high-priority' },
+                                { label: 'Medium Priority', class: 'medium-priority' },
+                                { label: 'Low Priority', class: 'low-priority' }
                             ])}
                         </div>
                     </div>
@@ -1516,8 +1516,8 @@ async function loadHomeDashboard() {
                             <span class="stat-label">Avg Days Overdue</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">${analytics.onTimeCompletion}%</span>
-                            <span class="stat-label">On-Time Rate</span>
+                            <span class="stat-number">${analytics.tasksThisWeek}</span>
+                            <span class="stat-label">Tasks This Week</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-number">${analytics.statusPercentages.pending}%</span>
@@ -1555,6 +1555,11 @@ function calculateTaskAnalytics(tasks) {
     const completed = tasks.filter(t => t.status === 'completed').length;
     const pending = tasks.filter(t => t.status === 'pending').length;
     const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+
+    // Priority counts
+    const highPriority = tasks.filter(t => t.priority?.toLowerCase() === 'high').length;
+    const mediumPriority = tasks.filter(t => t.priority?.toLowerCase() === 'medium' || !t.priority).length;
+    const lowPriority = tasks.filter(t => t.priority?.toLowerCase() === 'low').length;
 
     // Time analytics
     const completedTasks = tasks.filter(t => t.status === 'completed' && t.completed_at);
@@ -1627,6 +1632,9 @@ function calculateTaskAnalytics(tasks) {
         completed,
         pending,
         inProgress,
+        highPriority,
+        mediumPriority,
+        lowPriority,
         avgCompletionTime,
         overdue,
         onTimeCompletion,

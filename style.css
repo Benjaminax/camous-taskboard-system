@@ -1626,6 +1626,18 @@ body {
     background: linear-gradient(180deg, #10b981, #059669);
 }
 
+.bar-fill.high-priority {
+    background: linear-gradient(180deg, #ef4444, #dc2626);
+}
+
+.bar-fill.medium-priority {
+    background: linear-gradient(180deg, #f59e0b, #d97706);
+}
+
+.bar-fill.low-priority {
+    background: linear-gradient(180deg, #6b7280, #4b5563);
+}
+
 .bar-value {
     position: absolute;
     top: -25px;
