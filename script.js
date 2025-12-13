@@ -105,13 +105,11 @@ function setupEventListeners() {
     
     document.getElementById('closeTeamCodeBtn').addEventListener('click', () => closeModal('teamCodeModal'));
     
-    // Mobile menu toggle
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     if (mobileMenuBtn) {
         mobileMenuBtn.addEventListener('click', toggleSidebar);
     }
     
-    // Close sidebar when clicking outside on mobile
     document.addEventListener('click', (e) => {
         const sidebar = document.querySelector('.sidebar');
         const overlay = document.querySelector('.sidebar-overlay');
@@ -443,15 +441,12 @@ async function handleEditTeam(e) {
             closeModal('editTeamModal');
             e.target.reset();
             
-            // Update currentTeam
             currentTeam.team_name = data.team_name;
             currentTeam.description = data.description;
             currentTeam.max_members = data.max_members;
             
-            // Update UI
             document.getElementById('teamName').textContent = data.team_name;
             
-            // Update teams array
             const index = teams.findIndex(t => t.id === data.id);
             if (index !== -1) {
                 teams[index] = data;

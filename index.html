@@ -10,7 +10,6 @@
     <link rel="icon" type="image/x-icon" href="favicon.ico">
 </head>
 <body>
-    <!-- Auth Section (Initial View) -->
     <div id="authSection" class="auth-section">
         <div class="auth-container">
             <div class="auth-header">
@@ -99,9 +98,7 @@
         </div>
     </div>
 
-    <!-- Main Dashboard (Hidden Initially) -->
     <div id="dashboard" class="dashboard" style="display: none;">
-        <!-- Sidebar -->
         <div class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
@@ -155,17 +152,13 @@
             </div>
         </div>
 
-        <!-- Mobile Sidebar Overlay -->
         <div class="sidebar-overlay"></div>
 
-        <!-- Main Content -->
         <div class="main-content">
-            <!-- Mobile Menu Button -->
             <button id="mobileMenuBtn" class="mobile-menu-btn">
                 <i class="fas fa-bars"></i>
             </button>
             
-            <!-- Team Dashboard -->
             <div id="teamDashboard" class="team-dashboard" style="display: none;">
                 <div class="dashboard-header">
                     <div>
@@ -200,13 +193,11 @@
                     </div>
                 </div>
 
-                <!-- Stats -->
                 <div class="stats-container">
                     <h3><i class="fas fa-chart-pie"></i> Team Overview</h3>
                     <div class="stats-grid" id="teamStats"></div>
                 </div>
 
-                <!-- Members & Tasks -->
                 <div class="content-grid">
                     <div class="members-section">
                         <div class="section-header">
@@ -236,7 +227,6 @@
                 </div>
             </div>
 
-            <!-- Browse Teams Section -->
             <div id="browseTeamsSection" class="browse-teams-section" style="display: none;">
                 <div class="section-header">
                     <h1><i class="fas fa-search"></i> Browse All Teams</h1>
@@ -251,7 +241,6 @@
                 <div class="teams-grid" id="allTeamsList"></div>
             </div>
 
-            <!-- Home Dashboard -->
             <div id="homeDashboard" class="home-dashboard" style="display: none;">
                 <div class="section-header">
                     <h1><i class="fas fa-home"></i> Home</h1>
@@ -260,7 +249,6 @@
                 <div id="homeRecentTasks" class="recent-tasks"></div>
             </div>
 
-            <!-- Admin Panel -->
             <div id="adminPanel" class="admin-panel" style="display:none;">
                 <div class="section-header">
                     <h1><i class="fas fa-user-shield"></i> Admin</h1>
@@ -273,7 +261,6 @@
                 <div id="adminTeams" class="admin-teams" style="display:none;"></div>
             </div>
 
-            <!-- Empty State -->
             <div id="emptyState" class="empty-state">
                 <div class="empty-content">
                     <i class="fas fa-users"></i>
@@ -295,7 +282,6 @@
         </div>
     </div>
 
-    <!-- Modals -->
     <div id="createTeamModal" class="modal">
         <div class="modal-content">
             <button class="close">&times;</button>

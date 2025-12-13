@@ -40,7 +40,6 @@ body {
     padding: 0;
 }
 
-/* Auth Section - Centered */
 .auth-section {
     min-height: 100vh;
     display: flex;
@@ -183,7 +182,6 @@ body {
     box-shadow: 0 0 0 3px rgba(204, 54, 52, 0.1);
 }
 
-/* Password Wrapper */
 .password-wrapper {
     position: relative;
 }
@@ -319,13 +317,11 @@ body {
     color: var(--text-light);
 }
 
-/* Dashboard */
 .dashboard {
     display: flex;
     min-height: 100vh;
 }
 
-/* Sidebar - Fixed Open */
 .sidebar {
     width: var(--sidebar-width);
     background: var(--sidebar-bg);
@@ -511,7 +507,6 @@ body {
     background: rgba(231, 76, 60, 0.1) !important;
 }
 
-/* Main Content */
 .main-content {
     flex: 1;
     overflow-y: auto;
@@ -519,7 +514,6 @@ body {
     margin-left: var(--sidebar-width);
 }
 
-/* Mobile Menu Button */
 .mobile-menu-btn {
     display: none;
     position: fixed;
@@ -545,7 +539,6 @@ body {
     color: var(--text-dark);
 }
 
-/* Mobile Sidebar Overlay */
 .sidebar-overlay {
     display: none;
     position: fixed;
@@ -557,7 +550,6 @@ body {
     z-index: 999;
 }
 
-/* Team Dashboard */
 .team-dashboard {
     animation: fadeIn 0.3s ease;
 }
@@ -625,7 +617,6 @@ body {
     border-color: var(--primary-red);
 }
 
-/* Stats */
 .stats-container {
     margin-bottom: 2rem;
 }
@@ -672,7 +663,6 @@ body {
     font-weight: 500;
 }
 
-/* Content Grid */
 .content-grid {
     display: grid;
     grid-template-columns: 350px 1fr;
@@ -735,7 +725,6 @@ body {
     font-weight: 600;
 }
 
-/* Members List */
 .members-list {
     display: flex;
     flex-direction: column;
@@ -791,7 +780,6 @@ body {
     margin-top: 4px;
 }
 
-/* Tasks Grid */
 .tasks-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -836,7 +824,6 @@ body {
     background: var(--success-color);
 }
 
-/* Join request styling */
 .task-card.join-request {
     background: linear-gradient(135deg, #f8f9ff 0%, #e8f2ff 100%);
     border: 2px solid #4a90e2;
@@ -936,7 +923,6 @@ body {
     font-weight: 600;
 }
 
-/* Browse Teams Section */
 .browse-teams-section {
     animation: fadeIn 0.3s ease;
 }
@@ -1033,7 +1019,6 @@ body {
     background: var(--primary-dark-red);
 }
 
-/* Empty State */
 .empty-state {
     display: flex;
     align-items: center;
@@ -1074,7 +1059,6 @@ body {
     flex-wrap: wrap;
 }
 
-/* Modals */
 .modal {
     display: none;
     position: fixed;
@@ -1152,7 +1136,6 @@ body {
     margin-top: 2rem;
 }
 
-/* Team Code Modal */
 .team-code-display {
     text-align: center;
     padding: 1rem 0;
@@ -1251,7 +1234,6 @@ body {
     border-bottom: none;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .mobile-menu-btn {
         display: block;
@@ -1384,7 +1366,6 @@ body {
     }
 }
 
-/* Scrollbar */
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -1402,7 +1383,6 @@ body {
     background: var(--primary-gray);
 }
 
-/* Admin UI */
 .admin-panel { padding: 20px; }
 .admin-user-card, .admin-team-card { display:flex; justify-content:space-between; align-items:center; padding:12px; border:1px solid #e0e0e0; border-radius:6px; margin-bottom:10px; background:#fff; }
 .admin-user-info { font-size:14px; }
