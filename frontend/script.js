@@ -1421,15 +1421,24 @@ async function handleDeleteTeam() {
 
 async function loadHomeDashboard() {
     try {
+        console.log('Loading home dashboard...');
         const response = await fetchWithAuth(`${API_BASE_URL}/api/user/tasks`);
-        if (!response.ok) return;
+        if (!response.ok) {
+            console.error('Failed to fetch tasks:', response.status);
+            return;
+        }
         const tasks = await response.json();
+        console.log('Fetched tasks:', tasks);
 
         // Calculate task analytics
         const analytics = calculateTaskAnalytics(tasks);
+        console.log('Calculated analytics:', analytics);
 
         const dashboard = document.getElementById('homeDashboard');
-        if (!dashboard) return;
+        if (!dashboard) {
+            console.error('homeDashboard element not found');
+            return;
+        }
 
         dashboard.innerHTML = `
             <div class="section-header">
@@ -1504,16 +1513,16 @@ async function loadHomeDashboard() {
                             <span class="stat-label">On-Time Completion</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">${analytics.avgCompletionTime}</span>
-                            <span class="stat-label">Avg Days to Complete</span>
+                            <span class="stat-number">${analytics.productivityScore}</span>
+                            <span class="stat-label">Productivity Score</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">${analytics.tasksThisWeek}</span>
-                            <span class="stat-label">Weekly Tasks</span>
+                            <span class="stat-number">${analytics.efficiency}%</span>
+                            <span class="stat-label">Efficiency Rate</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">${analytics.overdue}</span>
-                            <span class="stat-label">Overdue</span>
+                            <span class="stat-number">${analytics.statusPercentages.completed}%</span>
+                            <span class="stat-label">Completion Rate</span>
                         </div>
                     </div>
                 </div>
@@ -1611,10 +1620,10 @@ function calculateTaskAnalytics(tasks) {
 
 function createBarChart(data, maxValue, className = '') {
     return data.map(item => {
-        const height = maxValue > 0 ? (item.value / maxValue) * 100 : 0;
+        const height = maxValue > 0 ? Math.max((item.value / maxValue) * 100, 5) : 5; // Minimum 5% height
         return `
             <div class="bar">
-                <div class="bar-fill ${className}" style="height: ${height}%">
+                <div class="bar-fill ${item.class || className}" style="height: ${height}%">
                     <span class="bar-value">${item.value}${item.unit || ''}</span>
                 </div>
                 <span class="bar-label">${item.label}</span>
