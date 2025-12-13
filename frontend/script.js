@@ -1445,16 +1445,54 @@ async function loadHomeDashboard() {
                             <span class="stat-label">Total Tasks</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">${analytics.completed}</span>
-                            <span class="stat-label">Completed</span>
+                            <span class="stat-number">${analytics.tasksThisWeek}</span>
+                            <span class="stat-label">Tasks This Week</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">${analytics.pending}</span>
-                            <span class="stat-label">Pending</span>
+                            <span class="stat-number">${analytics.overdue}</span>
+                            <span class="stat-label">Overdue Tasks</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">${analytics.inProgress}</span>
-                            <span class="stat-label">In Progress</span>
+                            <span class="stat-number">${analytics.avgCompletionTime}</span>
+                            <span class="stat-label">Avg Completion (days)</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="analytics-card">
+                    <h3><i class="fas fa-chart-bar"></i> Task Status Distribution</h3>
+                    <div class="bar-chart">
+                        <div class="bar-container">
+                            ${createBarChart([
+                                { value: analytics.completed, label: 'Completed', class: 'completed' },
+                                { value: analytics.inProgress, label: 'In Progress', class: 'in-progress' },
+                                { value: analytics.pending, label: 'Pending', class: 'pending' }
+                            ], Math.max(analytics.completed, analytics.inProgress, analytics.pending, 1))}
+                        </div>
+                        <div class="bar-chart-legend">
+                            ${createBarChartLegend([
+                                { label: 'Completed', class: 'completed' },
+                                { label: 'In Progress', class: 'in-progress' },
+                                { label: 'Pending', class: 'pending' }
+                            ])}
+                        </div>
+                    </div>
+                </div>
+                <div class="analytics-card">
+                    <h3><i class="fas fa-trophy"></i> Performance Metrics</h3>
+                    <div class="bar-chart">
+                        <div class="bar-container">
+                            ${createBarChart([
+                                { value: analytics.productivityScore, label: 'Productivity Score', class: 'productivity' },
+                                { value: analytics.efficiency, label: 'Efficiency Rate', class: 'efficiency', unit: '%' },
+                                { value: analytics.onTimeCompletion, label: 'On-Time Rate', class: 'on-time', unit: '%' }
+                            ], 100)}
+                        </div>
+                        <div class="bar-chart-legend">
+                            ${createBarChartLegend([
+                                { label: 'Productivity Score', class: 'productivity' },
+                                { label: 'Efficiency Rate', class: 'efficiency' },
+                                { label: 'On-Time Rate', class: 'on-time' }
+                            ])}
                         </div>
                     </div>
                 </div>
@@ -1462,69 +1500,38 @@ async function loadHomeDashboard() {
                     <h3><i class="fas fa-clock"></i> Time Analytics</h3>
                     <div class="analytics-stats">
                         <div class="stat-item">
-                            <span class="stat-number">${analytics.avgCompletionTime}</span>
-                            <span class="stat-label">Avg Completion Time</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number">${analytics.overdue}</span>
-                            <span class="stat-label">Overdue Tasks</span>
-                        </div>
-                        <div class="stat-item">
                             <span class="stat-number">${analytics.onTimeCompletion}%</span>
-                            <span class="stat-label">On-Time Rate</span>
+                            <span class="stat-label">On-Time Completion</span>
                         </div>
-                    </div>
-                </div>
-                <div class="analytics-card">
-                    <h3><i class="fas fa-chart-pie"></i> Status Distribution</h3>
-                    <div class="status-chart">
-                        <div class="status-bar">
-                            <div class="status-segment completed" style="width: ${analytics.statusPercentages.completed}%">
-                                <span>${analytics.statusPercentages.completed}%</span>
-                            </div>
-                            <div class="status-segment in-progress" style="width: ${analytics.statusPercentages.inProgress}%">
-                                <span>${analytics.statusPercentages.inProgress}%</span>
-                            </div>
-                            <div class="status-segment pending" style="width: ${analytics.statusPercentages.pending}%">
-                                <span>${analytics.statusPercentages.pending}%</span>
-                            </div>
-                        </div>
-                        <div class="status-legend">
-                            <div class="legend-item">
-                                <div class="legend-color completed"></div>
-                                <span>Completed</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color in-progress"></div>
-                                <span>In Progress</span>
-                            </div>
-                            <div class="legend-item">
-                                <div class="legend-color pending"></div>
-                                <span>Pending</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="analytics-card">
-                    <h3><i class="fas fa-trophy"></i> Performance</h3>
-                    <div class="analytics-stats">
                         <div class="stat-item">
-                            <span class="stat-number">${analytics.productivityScore}</span>
-                            <span class="stat-label">Productivity Score</span>
+                            <span class="stat-number">${analytics.avgCompletionTime}</span>
+                            <span class="stat-label">Avg Days to Complete</span>
                         </div>
                         <div class="stat-item">
                             <span class="stat-number">${analytics.tasksThisWeek}</span>
-                            <span class="stat-label">Tasks This Week</span>
+                            <span class="stat-label">Weekly Tasks</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">${analytics.efficiency}%</span>
-                            <span class="stat-label">Efficiency Rate</span>
+                            <span class="stat-number">${analytics.overdue}</span>
+                            <span class="stat-label">Overdue</span>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="analytics-disclaimer">
                 <p><small>Analytics powered by <a href="https://github.com/srinathbondala/Task-Management" target="_blank">Task Analytics Library</a> - Simple task metrics and insights</small></p>
+            </div>
+            <div class="section-header" style="margin-top: 2rem;">
+                <h2><i class="fas fa-list-check"></i> Your Recent Tasks</h2>
+                <p>Latest tasks from your teams</p>
+            </div>
+            <div class="tasks-section">
+                <div class="tasks-list">
+                    ${renderHomeTasks(tasks)}
+                </div>
+                ${tasks.length > 5 ? `<div class="view-all-tasks">
+                    <button onclick="showTeamDashboard()" class="btn-primary">View All Tasks</button>
+                </div>` : ''}
             </div>
         `;
     } catch (error) {
@@ -1600,6 +1607,83 @@ function calculateTaskAnalytics(tasks) {
         productivityScore,
         efficiency
     };
+}
+
+function createBarChart(data, maxValue, className = '') {
+    return data.map(item => {
+        const height = maxValue > 0 ? (item.value / maxValue) * 100 : 0;
+        return `
+            <div class="bar">
+                <div class="bar-fill ${className}" style="height: ${height}%">
+                    <span class="bar-value">${item.value}${item.unit || ''}</span>
+                </div>
+                <span class="bar-label">${item.label}</span>
+            </div>
+        `;
+    }).join('');
+}
+
+function createBarChartLegend(items) {
+    return items.map(item => `
+        <div class="chart-legend-item">
+            <div class="chart-legend-color ${item.class}"></div>
+            <span>${item.label}</span>
+        </div>
+    `).join('');
+}
+
+function renderHomeTasks(tasks) {
+    if (tasks.length === 0) {
+        return '<div class="no-tasks">No tasks found. Create your first task!</div>';
+    }
+
+    return tasks.slice(0, 5).map(task => {
+        if (task.type === 'join_request') {
+            return `
+                <div class="task-card join-request">
+                    <div class="task-header">
+                        <div>
+                            <div class="task-title">${task.title}</div>
+                            <p class="task-description">${task.description}</p>
+                        </div>
+                        <span class="task-priority high join-request-badge">
+                            Join Request
+                        </span>
+                    </div>
+                    <div class="task-meta">
+                        <div class="task-assignee">
+                            <div class="assignee-avatar">J</div>
+                            <span>Pending Review</span>
+                        </div>
+                        <span>Requested: ${formatDate(task.request_data?.requested_at)}</span>
+                    </div>
+                </div>
+            `;
+        } else {
+            return `
+                <div class="task-card ${task.status.toLowerCase().replace(' ', '-')}">
+                    <div class="task-header">
+                        <div>
+                            <div class="task-title">${task.title || 'Untitled Task'}</div>
+                            <p class="task-description">${task.description || 'No description provided'}</p>
+                        </div>
+                        <span class="task-priority ${task.priority?.toLowerCase() || 'medium'}">
+                            ${task.priority || 'Medium'}
+                        </span>
+                    </div>
+                    <div class="task-meta">
+                        <div class="task-assignee">
+                            <div class="assignee-avatar">
+                                ${task.assigned_name?.charAt(0) || '?'}
+                            </div>
+                            <span>${task.assigned_name || 'Unassigned'}</span>
+                        </div>
+                        <span>Due: ${formatDate(task.due_date)}</span>
+                    </div>
+                </div>
+            `;
+        }
+    }).join('');
 }
 
 function showAdminIfNeeded() {
