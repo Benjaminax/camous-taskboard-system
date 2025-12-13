@@ -760,6 +760,8 @@ async function handleRequestJoin(e) {
             if (joinBtn) {
                 joinBtn.outerHTML = '<button class="request-join-btn" disabled>Already a Member</button>';
             }
+            loadUserTeams();
+            loadAllTeams();
         } else {
             alert(data.error || 'Failed to send join request');
         }
