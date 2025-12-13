@@ -1344,6 +1344,33 @@ body {
         padding: 1.5rem;
     }
     
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 1rem;
+    }
+    
+    .toggle-password {
+        padding: 8px;
+        font-size: 1.1rem;
+    }
+    
+    .btn-primary {
+        font-size: 1rem;
+        padding: 1.2rem;
+        min-height: 48px; /* Better touch target */
+    }
+    
+    .test-credentials {
+        padding: 1rem;
+        font-size: 0.85rem;
+    }
+    
+    .test-credentials p {
+        margin: 0.4rem 0;
+    }
+    
     .stats-grid {
         grid-template-columns: 1fr;
     }

@@ -623,12 +623,8 @@ app.post('/api/teams/:teamId/request-join', authenticateToken, async (req, res) 
         if (memberCheck.rows.length > 0) return res.status(400).json({ error: 'Already a team member' });
 
 
-        const requestCheck = await pool.query('SELECT * FROM join_requests WHERE team_id = $1 AND user_id = $2 AND status = $3', [teamId, req.user.id, 'pending']);
-        if (requestCheck.rows.length > 0) return res.status(400).json({ error: 'Join request already pending' });
-
-
-        await pool.query('INSERT INTO join_requests (team_id, user_id, requested_at, status) VALUES ($1, $2, NOW(), $3)', [teamId, req.user.id, 'pending']);
-        res.json({ message: 'Join request sent successfully' });
+        await pool.query('INSERT INTO team_members (team_id, user_id) VALUES ($1, $2)', [teamId, req.user.id]);
+        res.json({ message: 'Joined team successfully' });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

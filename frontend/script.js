@@ -755,7 +755,11 @@ async function handleRequestJoin(e) {
         if (response.ok) {
             closeModal('requestJoinModal');
             e.target.reset();
-            alert('Join request sent successfully! The team creator will review your request.');
+            alert('Joined team successfully!');
+            const joinBtn = document.querySelector(`.request-join-btn[data-team-id="${teamId}"]`);
+            if (joinBtn) {
+                joinBtn.outerHTML = '<button class="request-join-btn" disabled>Already a Member</button>';
+            }
         } else {
             alert(data.error || 'Failed to send join request');
         }
