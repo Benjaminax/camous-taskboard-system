@@ -1508,20 +1508,20 @@ async function loadHomeDashboard() {
                     <h3><i class="fas fa-clock"></i> Time Analytics</h3>
                     <div class="analytics-stats">
                         <div class="stat-item">
+                            <span class="stat-number">${analytics.tasksThisMonth}</span>
+                            <span class="stat-label">Tasks This Month</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${analytics.avgOverdueDays}</span>
+                            <span class="stat-label">Avg Days Overdue</span>
+                        </div>
+                        <div class="stat-item">
                             <span class="stat-number">${analytics.onTimeCompletion}%</span>
-                            <span class="stat-label">On-Time Completion</span>
+                            <span class="stat-label">On-Time Rate</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">${analytics.productivityScore}</span>
-                            <span class="stat-label">Productivity Score</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number">${analytics.efficiency}%</span>
-                            <span class="stat-label">Efficiency Rate</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number">${analytics.statusPercentages.completed}%</span>
-                            <span class="stat-label">Completion Rate</span>
+                            <span class="stat-number">${analytics.statusPercentages.pending}%</span>
+                            <span class="stat-label">Pending Rate</span>
                         </div>
                     </div>
                 </div>
@@ -1594,6 +1594,12 @@ function calculateTaskAnalytics(tasks) {
         new Date(t.created_at) > weekAgo
     ).length;
 
+    // Monthly tasks
+    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const tasksThisMonth = tasks.filter(t =>
+        new Date(t.created_at) > monthAgo
+    ).length;
+
     // Productivity score (simple calculation)
     const productivityScore = Math.min(100, Math.round(
         (completed * 10) + (onTimeCompletion * 0.5) - (overdue * 5)
@@ -1601,6 +1607,20 @@ function calculateTaskAnalytics(tasks) {
 
     // Efficiency rate
     const efficiency = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    // Average overdue days for overdue tasks
+    const overdueTasks = tasks.filter(t =>
+        t.due_date &&
+        new Date(t.due_date) < now &&
+        t.status !== 'completed'
+    );
+    const avgOverdueDays = overdueTasks.length > 0
+        ? Math.round(overdueTasks.reduce((sum, task) => {
+            const dueDate = new Date(task.due_date);
+            const daysOverdue = Math.max(0, (now - dueDate) / (1000 * 60 * 60 * 24));
+            return sum + daysOverdue;
+        }, 0) / overdueTasks.length)
+        : 0;
 
     return {
         total,
@@ -1612,6 +1632,8 @@ function calculateTaskAnalytics(tasks) {
         onTimeCompletion,
         statusPercentages,
         tasksThisWeek,
+        tasksThisMonth,
+        avgOverdueDays,
         productivityScore,
         efficiency
     };
