@@ -1,7 +1,7 @@
 # Campus Taskboard System
 
 ## Project Overview
-We have developed a collaborative task management platform specifically for Academic City University students to work on group projects. This system allows students to create teams, manage tasks, and collaborate effectively on their assignments. The platform includes user authentication, team management, task assignment, and an admin panel for oversight.
+I  developed a collaborative task management platform specifically for Academic City University students to work on group projects. This system allows students to create teams, manage tasks, and collaborate effectively on their assignments. The platform includes user authentication, team management, task assignment, and an admin panel for oversight.
 
 ## Deployment Links
 - **Frontend**: https://benjaminax.github.io/camous-taskboard-system/
@@ -84,7 +84,7 @@ For testing purposes, you can use the following demo credentials:
 5. Admins can access the Admin panel to manage users and teams.
 
 ## Task Analytics
-The Home tab features a comprehensive task analytics dashboard powered by our [Task Analytics Library](https://github.com/srinathbondala/Task-Management). This provides:
+The Home tab features a comprehensive task analytics dashboard powered by  [Task Analytics Library](https://github.com/srinathbondala/Task-Management). This provides:
 
 - **Task Overview**: Total tasks, completion status breakdown
 - **Time Analytics**: Average completion time, overdue tasks, on-time completion rate
