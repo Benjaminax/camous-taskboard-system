@@ -27,7 +27,12 @@ For testing purposes, you can use the following demo credentials:
 - Include summary indicators total tasks, completed count, user stats
 - Team member management and task assignment
 
-### 4. Admin Panel
+### 4. Task Analytics
+- Simple analytics dashboard powered by [Task Analytics Library](https://github.com/srinathbondala/Task-Management)
+- View task completion rates, time analytics, status distribution, and performance metrics
+- Track productivity scores, overdue tasks, and efficiency rates
+
+### 5. Admin Panel
 - Host backend on Render with Node.js + PostgreSQL
 - Host frontend on GitHub Pages and integrate with backend API
 - Admin user/team management interface
@@ -75,7 +80,17 @@ For testing purposes, you can use the following demo credentials:
 1. Register a new account or login with existing credentials.
 2. Create or join a team.
 3. Add tasks to your team and assign them to members.
-4. Use the Home tab to view your dashboard.
+4. Use the Home tab to view task analytics and performance metrics.
 5. Admins can access the Admin panel to manage users and teams.
+
+## Task Analytics
+The Home tab features a comprehensive task analytics dashboard powered by our [Task Analytics Library](https://github.com/srinathbondala/Task-Management). This provides:
+
+- **Task Overview**: Total tasks, completion status breakdown
+- **Time Analytics**: Average completion time, overdue tasks, on-time completion rate
+- **Status Distribution**: Visual representation of task status percentages
+- **Performance Metrics**: Productivity scores, weekly task counts, efficiency rates
+
+All analytics are calculated in real-time from your task data.
 
 

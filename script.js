@@ -761,6 +761,14 @@ async function handleRequestJoin(e) {
             }
             loadUserTeams();
             loadAllTeams();
+            
+            // Show sidebar on mobile so user can see the newly joined team
+            if (window.innerWidth <= 768) {
+                const sidebar = document.querySelector('.sidebar');
+                const overlay = document.querySelector('.sidebar-overlay');
+                sidebar.classList.add('active');
+                overlay.classList.add('active');
+            }
         } else {
             alert(data.error || 'Failed to send join request');
         }
@@ -1412,44 +1420,185 @@ async function handleDeleteTeam() {
 
 async function loadHomeDashboard() {
     try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/api/user/dashboard`);
+        const response = await fetchWithAuth(`${API_BASE_URL}/api/user/tasks`);
         if (!response.ok) return;
-        const data = await response.json();
-        const statsGrid = document.getElementById('homeStats');
-        if (!statsGrid) return;
-        statsGrid.innerHTML = `
-            <div class="stat-card">
-                <h4>${data.total_teams || 0}</h4>
-                <p>Your Teams</p>
+        const tasks = await response.json();
+
+        // Calculate task analytics
+        const analytics = calculateTaskAnalytics(tasks);
+
+        const dashboard = document.getElementById('homeDashboard');
+        if (!dashboard) return;
+
+        dashboard.innerHTML = `
+            <div class="section-header">
+                <h1><i class="fas fa-chart-line"></i> Task Analytics</h1>
+                <p>Simple analytics for your tasks - <a href="https://github.com/srinathbondala/Task-Management" target="_blank" class="analytics-link">View on GitHub</a></p>
             </div>
-            <div class="stat-card">
-                <h4>${data.tasks_assigned || 0}</h4>
-                <p>Tasks Assigned to You</p>
+            <div class="analytics-grid">
+                <div class="analytics-card">
+                    <h3><i class="fas fa-tasks"></i> Task Overview</h3>
+                    <div class="analytics-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">${analytics.total}</span>
+                            <span class="stat-label">Total Tasks</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${analytics.completed}</span>
+                            <span class="stat-label">Completed</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${analytics.pending}</span>
+                            <span class="stat-label">Pending</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${analytics.inProgress}</span>
+                            <span class="stat-label">In Progress</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="analytics-card">
+                    <h3><i class="fas fa-clock"></i> Time Analytics</h3>
+                    <div class="analytics-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">${analytics.avgCompletionTime}</span>
+                            <span class="stat-label">Avg Completion Time</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${analytics.overdue}</span>
+                            <span class="stat-label">Overdue Tasks</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${analytics.onTimeCompletion}%</span>
+                            <span class="stat-label">On-Time Rate</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="analytics-card">
+                    <h3><i class="fas fa-chart-pie"></i> Status Distribution</h3>
+                    <div class="status-chart">
+                        <div class="status-bar">
+                            <div class="status-segment completed" style="width: ${analytics.statusPercentages.completed}%">
+                                <span>${analytics.statusPercentages.completed}%</span>
+                            </div>
+                            <div class="status-segment in-progress" style="width: ${analytics.statusPercentages.inProgress}%">
+                                <span>${analytics.statusPercentages.inProgress}%</span>
+                            </div>
+                            <div class="status-segment pending" style="width: ${analytics.statusPercentages.pending}%">
+                                <span>${analytics.statusPercentages.pending}%</span>
+                            </div>
+                        </div>
+                        <div class="status-legend">
+                            <div class="legend-item">
+                                <div class="legend-color completed"></div>
+                                <span>Completed</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color in-progress"></div>
+                                <span>In Progress</span>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color pending"></div>
+                                <span>Pending</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="analytics-card">
+                    <h3><i class="fas fa-trophy"></i> Performance</h3>
+                    <div class="analytics-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">${analytics.productivityScore}</span>
+                            <span class="stat-label">Productivity Score</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${analytics.tasksThisWeek}</span>
+                            <span class="stat-label">Tasks This Week</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">${analytics.efficiency}%</span>
+                            <span class="stat-label">Efficiency Rate</span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="stat-card">
-                <h4>${data.total_tasks || 0}</h4>
-                <p>Total Tasks</p>
+            <div class="analytics-disclaimer">
+                <p><small>Analytics powered by <a href="https://github.com/srinathbondala/Task-Management" target="_blank">Task Analytics Library</a> - Simple task metrics and insights</small></p>
             </div>
         `;
-        try {
-            const recentRes = await fetchWithAuth(`${API_BASE_URL}/api/user/tasks`);
-            if (recentRes.ok) {
-                const tasks = await recentRes.json();
-                const recentList = document.getElementById('homeRecentTasks');
-                if (recentList) {
-                    recentList.innerHTML = '<h3>Recent Tasks</h3>' + tasks.map(t => `\
-                        <div class="recent-task-card">\
-                            <h4>${t.title}</h4>\
-                            <p>${t.team_name || 'No team'} - ${t.status || 'No status'}</p>\
-                        </div>`).join('');
-                }
-            }
-        } catch (err) {
-            console.error('Load recent tasks error:', err);
-        }
     } catch (error) {
         console.error('Load home dashboard error:', error);
     }
+}
+
+function calculateTaskAnalytics(tasks) {
+    const now = new Date();
+    const total = tasks.length;
+
+    // Status counts
+    const completed = tasks.filter(t => t.status === 'completed').length;
+    const pending = tasks.filter(t => t.status === 'pending').length;
+    const inProgress = tasks.filter(t => t.status === 'in_progress').length;
+
+    // Time analytics
+    const completedTasks = tasks.filter(t => t.status === 'completed' && t.completed_at);
+    const avgCompletionTime = completedTasks.length > 0
+        ? Math.round(completedTasks.reduce((sum, task) => {
+            const created = new Date(task.created_at);
+            const completed = new Date(task.completed_at);
+            return sum + (completed - created) / (1000 * 60 * 60 * 24); // days
+        }, 0) / completedTasks.length)
+        : 0;
+
+    // Overdue tasks
+    const overdue = tasks.filter(t =>
+        t.due_date &&
+        new Date(t.due_date) < now &&
+        t.status !== 'completed'
+    ).length;
+
+    // On-time completion rate
+    const onTimeTasks = completedTasks.filter(task =>
+        !task.due_date || new Date(task.completed_at) <= new Date(task.due_date)
+    ).length;
+    const onTimeCompletion = completedTasks.length > 0
+        ? Math.round((onTimeTasks / completedTasks.length) * 100)
+        : 0;
+
+    // Status percentages
+    const statusPercentages = {
+        completed: total > 0 ? Math.round((completed / total) * 100) : 0,
+        inProgress: total > 0 ? Math.round((inProgress / total) * 100) : 0,
+        pending: total > 0 ? Math.round((pending / total) * 100) : 0
+    };
+
+    // Weekly tasks
+    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const tasksThisWeek = tasks.filter(t =>
+        new Date(t.created_at) > weekAgo
+    ).length;
+
+    // Productivity score (simple calculation)
+    const productivityScore = Math.min(100, Math.round(
+        (completed * 10) + (onTimeCompletion * 0.5) - (overdue * 5)
+    ));
+
+    // Efficiency rate
+    const efficiency = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    return {
+        total,
+        completed,
+        pending,
+        inProgress,
+        avgCompletionTime,
+        overdue,
+        onTimeCompletion,
+        statusPercentages,
+        tasksThisWeek,
+        productivityScore,
+        efficiency
+    };
 }
 
 function showAdminIfNeeded() {
